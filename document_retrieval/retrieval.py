@@ -22,7 +22,7 @@ def retrieve_documents(
 ) -> dict[str, list[tuple[str, float]]]:
     # Calculate term frequencies within the query
     queries_tf = defaultdict(lambda: defaultdict(int))
-    queries_max_tf = defaultdict(lambda: defaultdict(int))
+    queries_max_tf = defaultdict(int)
 
     for qid, tokens in query_tokens.items():
         for token in tokens:

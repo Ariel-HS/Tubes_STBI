@@ -25,7 +25,7 @@ class ScoringResults:
         self.tf_idf = defaultdict(lambda: defaultdict(float))
         self.doc_lengths = defaultdict(float)
 
-        for term, docs in inverted_index.items():
+        for term, docs in inverted_index.inverted_index.items():
             # IDF Calculation
             df_t = len(docs)
             self.idf[term] = math.log2(total_docs / df_t)
