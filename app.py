@@ -316,9 +316,9 @@ settings = {
 
 
 # Main area header
-st.markdown('<div class="app-title">STBI Search Engine</div>', unsafe_allow_html=True)
+st.markdown('<div class="app-title">Retrieval Engine</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="app-subtitle">Generative Adversarial Network Group</div>',
+    '<div class="app-subtitle">Advanced document search powered by GAN query expansion.</div>',
     unsafe_allow_html=True,
 )
 
