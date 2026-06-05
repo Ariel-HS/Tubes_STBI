@@ -4,6 +4,16 @@ A Vector Space Model Information Retrieval engine for the **IF4042 Sistem Temu B
 
 A [Streamlit](https://streamlit.io/) app (`app.py`) is the main user-facing front end.
 
+## Group Member
+
+- Ariel Herfrison 13522002
+- Ibrahim Ihsan Rasyid 13522018
+- Farhan Nafis Rayhan 13522037
+- Fabian Radenta Bangun 13522105
+- Rayendra Althaf Taraka Noor 13522107
+
+
+
 ## Features
 
 - TF-IDF retrieval with cosine similarity over the CISI collection
