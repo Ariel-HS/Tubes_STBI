@@ -22,6 +22,7 @@ from preprocessing.preprocessing import load_smart, preprocess, preprocess_colle
 from inverted_index.inverted_index import InvertedIndex
 from scoring.scoring import ScoringResults
 from query_expansion.query_expansion import QueryExpander
+from document_retrieval.retrieval import retrieve_documents
 
 
 # Page config
@@ -253,13 +254,16 @@ def run_search(query, settings):
     expanded_terms = run_expand_query(query, settings)
     expanded_tokens = tokens + [term for term, _ in expanded_terms]
 
+    rank_original = retrieve_documents({"q": tokens}, system["processed_docs"])["q"]
+    rank_expanded = retrieve_documents({"q": expanded_tokens}, system["processed_docs"])["q"]
+
     return {
         "original_query": query,
         "expanded_terms": expanded_terms,
         "map_original": 0.0,
         "map_expanded": 0.0,
-        "ranking_original": format_ranking_to_df(_rank_query(tokens, system)),
-        "ranking_expanded": format_ranking_to_df(_rank_query(expanded_tokens, system)),
+        "ranking_original": format_ranking_to_df(rank_original),
+        "ranking_expanded": format_ranking_to_df(rank_expanded),
     }
 
 
@@ -344,8 +348,8 @@ def run_batch_processing(uploaded_file, settings):
         expanded_terms = run_expand_query(query_str, settings)
         expanded_tokens = tokens + [term for term, _ in expanded_terms]
 
-        ranking_original = _rank_query(tokens, system)
-        ranking_expanded = _rank_query(expanded_tokens, system)
+        ranking_original = retrieve_documents({qid: tokens}, system["processed_docs"])[qid]
+        ranking_expanded = retrieve_documents({qid: expanded_tokens}, system["processed_docs"])[qid]
 
         summary_rows.append(
             {
@@ -610,7 +614,7 @@ with batch_tab:
         "query. (MAP is pending the qrels.text evaluation.)"
     )
 
-    uploaded_file = st.file_uploader("Upload queries file", type=["txt", "text"])
+    uploaded_file = st.file_uploader("Upload queries file", type=["text"])
     process_clicked = st.button("Process Batch", type="primary", key="batch_btn")
 
     if process_clicked:
