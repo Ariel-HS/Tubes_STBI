@@ -604,7 +604,7 @@ with batch_tab:
         "query. (MAP is pending the qrels.text evaluation.)"
     )
 
-    uploaded_file = st.file_uploader("Upload queries file", type=["txt","text"])
+    uploaded_file = st.file_uploader("Upload queries file", type=["txt","text", "all"])
     process_clicked = st.button("Process Batch", type="primary", key="batch_btn")
 
     if process_clicked:
