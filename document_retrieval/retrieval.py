@@ -1,7 +1,6 @@
 from collections import defaultdict
 import math
 from inverted_index.inverted_index import InvertedIndex
-from mAP.map import calculate_average_precision
 from scoring.scoring import ScoringResults
 from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
 
