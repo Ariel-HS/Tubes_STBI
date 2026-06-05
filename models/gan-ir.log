@@ -1,0 +1,221 @@
+[{"stream_name":"stderr","time":5.974118738,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":5.974184369,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":5.974188441,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":5.974211439,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.5311463,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.531180144,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.531186158,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.531190388,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":9.551327535,"data":"Collecting rank-bm25\r\n"}
+,{"stream_name":"stdout","time":9.702847433,"data":"  Downloading rank_bm25-0.2.2-py3-none-any.whl.metadata (3.2 kB)\r\n"}
+,{"stream_name":"stdout","time":9.702876729,"data":"Requirement already satisfied: numpy in /usr/local/lib/python3.12/dist-packages (from rank-bm25) (2.4.6)\r\n"}
+,{"stream_name":"stdout","time":9.753535897999999,"data":"Downloading rank_bm25-0.2.2-py3-none-any.whl (8.6 kB)\r\n"}
+,{"stream_name":"stdout","time":11.725698402999999,"data":"Installing collected packages: rank-bm25\r\n"}
+,{"stream_name":"stdout","time":11.725728561,"data":"Successfully installed rank-bm25-0.2.2\r\n"}
+,{"stream_name":"stdout","time":19.404869309,"data":"Parsing CISI dataset...\n"}
+,{"stream_name":"stdout","time":19.40491364,"data":"Loaded 1460 documents, 112 queries, and 76 relevance judgments.\n"}
+,{"stream_name":"stdout","time":19.684720379,"data":"\n"}
+,{"stream_name":"stdout","time":19.684759319,"data":"--- Training Condition: Stemming=True, Stopwords=True ---\n"}
+,{"stream_name":"stdout","time":22.729628684,"data":"Successfully generated 456 training triples.\n"}
+,{"stream_name":"stdout","time":39.397362709,"data":"Epoch 010/300 | D Loss: -0.1047 | G Loss: -0.4633 | Best G: -0.6138\n"}
+,{"stream_name":"stdout","time":49.629382725,"data":"Epoch 020/300 | D Loss: -0.1329 | G Loss: -0.5762 | Best G: -0.6138\n"}
+,{"stream_name":"stdout","time":59.887200221,"data":"Epoch 030/300 | D Loss: 0.0342 | G Loss: -0.3050 | Best G: -0.6138\n"}
+,{"stream_name":"stdout","time":70.193255269,"data":"Epoch 040/300 | D Loss: -0.1815 | G Loss: -0.4256 | Best G: -0.6138\n"}
+,{"stream_name":"stdout","time":80.566807523,"data":"Epoch 050/300 | D Loss: -0.1087 | G Loss: -0.6721 | Best G: -0.7206\n"}
+,{"stream_name":"stdout","time":90.978616673,"data":"Epoch 060/300 | D Loss: -0.3014 | G Loss: -0.8228 | Best G: -0.8228\n"}
+,{"stream_name":"stdout","time":101.280230505,"data":"Epoch 070/300 | D Loss: -0.1656 | G Loss: -0.7661 | Best G: -1.0956\n"}
+,{"stream_name":"stdout","time":111.490590126,"data":"Epoch 080/300 | D Loss: -0.1608 | G Loss: -1.2433 | Best G: -1.2433\n"}
+,{"stream_name":"stdout","time":121.695605906,"data":"Epoch 090/300 | D Loss: -0.2801 | G Loss: -1.2087 | Best G: -1.4198\n"}
+,{"stream_name":"stdout","time":131.871620841,"data":"Epoch 100/300 | D Loss: -0.3070 | G Loss: -1.2816 | Best G: -1.4198\n"}
+,{"stream_name":"stdout","time":142.030748577,"data":"Epoch 110/300 | D Loss: -0.1230 | G Loss: -1.4705 | Best G: -1.5463\n"}
+,{"stream_name":"stdout","time":152.184752275,"data":"Epoch 120/300 | D Loss: -0.4873 | G Loss: -1.3681 | Best G: -1.5463\n"}
+,{"stream_name":"stdout","time":162.393585089,"data":"Epoch 130/300 | D Loss: -0.3726 | G Loss: -1.3075 | Best G: -1.5802\n"}
+,{"stream_name":"stdout","time":172.637690109,"data":"Epoch 140/300 | D Loss: -0.0933 | G Loss: -1.3416 | Best G: -1.5802\n"}
+,{"stream_name":"stdout","time":182.858360686,"data":"Epoch 150/300 | D Loss: -0.4838 | G Loss: -1.2295 | Best G: -1.7338\n"}
+,{"stream_name":"stdout","time":193.02326409,"data":"Epoch 160/300 | D Loss: -0.7354 | G Loss: -1.7196 | Best G: -1.7338\n"}
+,{"stream_name":"stdout","time":203.184787975,"data":"Epoch 170/300 | D Loss: -0.1875 | G Loss: -1.4710 | Best G: -1.7695\n"}
+,{"stream_name":"stdout","time":213.357570326,"data":"Epoch 180/300 | D Loss: -0.6910 | G Loss: -1.7483 | Best G: -1.8606\n"}
+,{"stream_name":"stdout","time":223.492304377,"data":"Epoch 190/300 | D Loss: -0.1479 | G Loss: -1.1136 | Best G: -1.8821\n"}
+,{"stream_name":"stdout","time":233.561900208,"data":"Epoch 200/300 | D Loss: -0.3357 | G Loss: -1.6298 | Best G: -1.9521\n"}
+,{"stream_name":"stdout","time":243.706672475,"data":"Epoch 210/300 | D Loss: -0.1513 | G Loss: -1.6510 | Best G: -1.9521\n"}
+,{"stream_name":"stdout","time":253.824758367,"data":"Epoch 220/300 | D Loss: -0.0370 | G Loss: -2.3396 | Best G: -2.3396\n"}
+,{"stream_name":"stdout","time":263.946797748,"data":"Epoch 230/300 | D Loss: -0.7525 | G Loss: -1.6605 | Best G: -2.3396\n"}
+,{"stream_name":"stdout","time":274.055020536,"data":"Epoch 240/300 | D Loss: -0.0240 | G Loss: -1.7181 | Best G: -2.3396\n"}
+,{"stream_name":"stdout","time":284.205432386,"data":"Epoch 250/300 | D Loss: -0.6101 | G Loss: -1.3161 | Best G: -2.3396\n"}
+,{"stream_name":"stdout","time":294.373244037,"data":"Epoch 260/300 | D Loss: -0.7577 | G Loss: -1.8098 | Best G: -2.3444\n"}
+,{"stream_name":"stdout","time":304.496489449,"data":"Epoch 270/300 | D Loss: -0.3972 | G Loss: -2.1906 | Best G: -2.3444\n"}
+,{"stream_name":"stdout","time":314.501168917,"data":"Epoch 280/300 | D Loss: -0.1181 | G Loss: -2.1330 | Best G: -2.3444\n"}
+,{"stream_name":"stdout","time":324.572844386,"data":"Epoch 290/300 | D Loss: -0.2447 | G Loss: -1.9833 | Best G: -2.3862\n"}
+,{"stream_name":"stdout","time":334.656327083,"data":"Epoch 300/300 | D Loss: 0.1949 | G Loss: -1.9608 | Best G: -2.3862\n"}
+,{"stream_name":"stdout","time":334.959279314,"data":"Training complete. Generator and EMA saved.\n"}
+,{"stream_name":"stdout","time":334.959326964,"data":"Successfully serialized weights and vectors to pretrained_qegans/stem_True_stop_True\n"}
+,{"stream_name":"stdout","time":334.959335134,"data":"\n"}
+,{"stream_name":"stdout","time":334.959341067,"data":"--- Training Condition: Stemming=True, Stopwords=False ---\n"}
+,{"stream_name":"stdout","time":339.263908726,"data":"Successfully generated 456 training triples.\n"}
+,{"stream_name":"stdout","time":349.615987312,"data":"Epoch 010/300 | D Loss: -0.0925 | G Loss: -0.5499 | Best G: -0.6154\n"}
+,{"stream_name":"stdout","time":359.880607061,"data":"Epoch 020/300 | D Loss: -0.0379 | G Loss: -0.5691 | Best G: -0.6896\n"}
+,{"stream_name":"stdout","time":370.091351277,"data":"Epoch 030/300 | D Loss: -0.1024 | G Loss: -0.5527 | Best G: -0.6896\n"}
+,{"stream_name":"stdout","time":380.295500029,"data":"Epoch 040/300 | D Loss: -0.1048 | G Loss: -0.6918 | Best G: -0.6918\n"}
+,{"stream_name":"stdout","time":390.604456868,"data":"Epoch 050/300 | D Loss: -0.1217 | G Loss: -0.7140 | Best G: -0.7140\n"}
+,{"stream_name":"stdout","time":400.98819408,"data":"Epoch 060/300 | D Loss: -0.0045 | G Loss: -0.7488 | Best G: -0.8304\n"}
+,{"stream_name":"stdout","time":411.301832301,"data":"Epoch 070/300 | D Loss: -0.2670 | G Loss: -1.0610 | Best G: -1.0610\n"}
+,{"stream_name":"stdout","time":421.528431757,"data":"Epoch 080/300 | D Loss: -0.1464 | G Loss: -0.9649 | Best G: -1.2849\n"}
+,{"stream_name":"stdout","time":431.960428473,"data":"Epoch 090/300 | D Loss: -0.4493 | G Loss: -1.0646 | Best G: -1.3402\n"}
+,{"stream_name":"stdout","time":442.282341015,"data":"Epoch 100/300 | D Loss: -0.4573 | G Loss: -1.4085 | Best G: -1.4127\n"}
+,{"stream_name":"stdout","time":452.573012437,"data":"Epoch 110/300 | D Loss: -0.5434 | G Loss: -1.1466 | Best G: -1.5112\n"}
+,{"stream_name":"stdout","time":462.848868941,"data":"Epoch 120/300 | D Loss: -0.5727 | G Loss: -1.3598 | Best G: -1.5208\n"}
+,{"stream_name":"stdout","time":473.057729887,"data":"Epoch 130/300 | D Loss: -0.3128 | G Loss: -1.3721 | Best G: -1.6906\n"}
+,{"stream_name":"stdout","time":483.278041353,"data":"Epoch 140/300 | D Loss: -0.2189 | G Loss: -1.3329 | Best G: -1.6906\n"}
+,{"stream_name":"stdout","time":493.540937337,"data":"Epoch 150/300 | D Loss: 0.0035 | G Loss: -1.2786 | Best G: -1.7332\n"}
+,{"stream_name":"stdout","time":503.783598061,"data":"Epoch 160/300 | D Loss: -0.3800 | G Loss: -1.6246 | Best G: -1.7566\n"}
+,{"stream_name":"stdout","time":514.073347504,"data":"Epoch 170/300 | D Loss: -0.2355 | G Loss: -1.4190 | Best G: -1.9591\n"}
+,{"stream_name":"stdout","time":524.35462471,"data":"Epoch 180/300 | D Loss: -0.2359 | G Loss: -1.3215 | Best G: -1.9955\n"}
+,{"stream_name":"stdout","time":534.604562534,"data":"Epoch 190/300 | D Loss: -0.4204 | G Loss: -1.6559 | Best G: -1.9955\n"}
+,{"stream_name":"stdout","time":544.884191219,"data":"Epoch 200/300 | D Loss: -0.0595 | G Loss: -1.3676 | Best G: -1.9955\n"}
+,{"stream_name":"stdout","time":555.169437854,"data":"Epoch 210/300 | D Loss: -0.2035 | G Loss: -1.5993 | Best G: -1.9955\n"}
+,{"stream_name":"stdout","time":565.441832821,"data":"Epoch 220/300 | D Loss: -0.5983 | G Loss: -1.9060 | Best G: -2.1812\n"}
+,{"stream_name":"stdout","time":575.711401558,"data":"Epoch 230/300 | D Loss: -0.2747 | G Loss: -1.6561 | Best G: -2.2083\n"}
+,{"stream_name":"stdout","time":585.914512107,"data":"Epoch 240/300 | D Loss: -0.2550 | G Loss: -1.9599 | Best G: -2.2083\n"}
+,{"stream_name":"stdout","time":596.140003241,"data":"Epoch 250/300 | D Loss: -0.2093 | G Loss: -1.7313 | Best G: -2.2083\n"}
+,{"stream_name":"stdout","time":606.399973292,"data":"Epoch 260/300 | D Loss: -0.3713 | G Loss: -1.9293 | Best G: -2.2163\n"}
+,{"stream_name":"stdout","time":616.618991666,"data":"Epoch 270/300 | D Loss: -0.6998 | G Loss: -2.0400 | Best G: -2.5662\n"}
+,{"stream_name":"stdout","time":626.996744904,"data":"Epoch 280/300 | D Loss: -0.8236 | G Loss: -2.0072 | Best G: -2.5662\n"}
+,{"stream_name":"stdout","time":637.225990443,"data":"Epoch 290/300 | D Loss: -0.5761 | G Loss: -1.7816 | Best G: -2.6649\n"}
+,{"stream_name":"stdout","time":647.4432735,"data":"Epoch 300/300 | D Loss: -0.5926 | G Loss: -1.9550 | Best G: -2.6649\n"}
+,{"stream_name":"stdout","time":647.443312233,"data":"Training complete. Generator and EMA saved.\n"}
+,{"stream_name":"stdout","time":647.443316977,"data":"Successfully serialized weights and vectors to pretrained_qegans/stem_True_stop_False\n"}
+,{"stream_name":"stdout","time":647.443320595,"data":"\n"}
+,{"stream_name":"stdout","time":647.443323973,"data":"--- Training Condition: Stemming=False, Stopwords=True ---\n"}
+,{"stream_name":"stdout","time":648.887411143,"data":"Successfully generated 456 training triples.\n"}
+,{"stream_name":"stdout","time":659.236295932,"data":"Epoch 010/300 | D Loss: -0.2872 | G Loss: -0.3204 | Best G: -0.5332\n"}
+,{"stream_name":"stdout","time":669.530567006,"data":"Epoch 020/300 | D Loss: -0.0464 | G Loss: -0.5200 | Best G: -0.5854\n"}
+,{"stream_name":"stdout","time":679.836316878,"data":"Epoch 030/300 | D Loss: -0.1958 | G Loss: -0.5211 | Best G: -0.5854\n"}
+,{"stream_name":"stdout","time":690.123204118,"data":"Epoch 040/300 | D Loss: -0.1102 | G Loss: -0.4533 | Best G: -0.5854\n"}
+,{"stream_name":"stdout","time":700.450051005,"data":"Epoch 050/300 | D Loss: -0.0358 | G Loss: -0.4821 | Best G: -0.5854\n"}
+,{"stream_name":"stdout","time":710.818268119,"data":"Epoch 060/300 | D Loss: -0.0555 | G Loss: -0.3751 | Best G: -0.5854\n"}
+,{"stream_name":"stdout","time":721.244473773,"data":"Epoch 070/300 | D Loss: -0.3164 | G Loss: -0.5096 | Best G: -0.6450\n"}
+,{"stream_name":"stdout","time":731.618775223,"data":"Epoch 080/300 | D Loss: -0.1586 | G Loss: -0.6841 | Best G: -0.6859\n"}
+,{"stream_name":"stdout","time":741.93094933,"data":"Epoch 090/300 | D Loss: -0.1146 | G Loss: -0.8885 | Best G: -0.8885\n"}
+,{"stream_name":"stdout","time":752.246701491,"data":"Epoch 100/300 | D Loss: -0.3156 | G Loss: -0.9334 | Best G: -1.1334\n"}
+,{"stream_name":"stdout","time":762.590914636,"data":"Epoch 110/300 | D Loss: -0.1311 | G Loss: -1.0682 | Best G: -1.3116\n"}
+,{"stream_name":"stdout","time":772.79884498,"data":"Epoch 120/300 | D Loss: -0.2371 | G Loss: -0.9709 | Best G: -1.3116\n"}
+,{"stream_name":"stdout","time":782.99879569,"data":"Epoch 130/300 | D Loss: -0.2835 | G Loss: -1.1648 | Best G: -1.3116\n"}
+,{"stream_name":"stdout","time":793.234265456,"data":"Epoch 140/300 | D Loss: -0.1984 | G Loss: -1.1667 | Best G: -1.3225\n"}
+,{"stream_name":"stdout","time":803.597101212,"data":"Epoch 150/300 | D Loss: -0.2958 | G Loss: -1.3509 | Best G: -1.3509\n"}
+,{"stream_name":"stdout","time":813.913116169,"data":"Epoch 160/300 | D Loss: -0.0812 | G Loss: -1.2389 | Best G: -1.4629\n"}
+,{"stream_name":"stdout","time":824.226711346,"data":"Epoch 170/300 | D Loss: -0.5403 | G Loss: -1.0269 | Best G: -1.6619\n"}
+,{"stream_name":"stdout","time":834.451964188,"data":"Epoch 180/300 | D Loss: -0.4778 | G Loss: -1.3069 | Best G: -1.6787\n"}
+,{"stream_name":"stdout","time":844.674286832,"data":"Epoch 190/300 | D Loss: -0.1430 | G Loss: -1.1002 | Best G: -1.7050\n"}
+,{"stream_name":"stdout","time":854.929166362,"data":"Epoch 200/300 | D Loss: -0.2725 | G Loss: -1.6990 | Best G: -1.7050\n"}
+,{"stream_name":"stdout","time":865.136862277,"data":"Epoch 210/300 | D Loss: -0.1006 | G Loss: -1.2954 | Best G: -1.7770\n"}
+,{"stream_name":"stdout","time":875.392224045,"data":"Epoch 220/300 | D Loss: -0.4052 | G Loss: -1.5482 | Best G: -1.7770\n"}
+,{"stream_name":"stdout","time":885.668050293,"data":"Epoch 230/300 | D Loss: -0.2848 | G Loss: -1.5857 | Best G: -1.7871\n"}
+,{"stream_name":"stdout","time":896.047911972,"data":"Epoch 240/300 | D Loss: -0.3681 | G Loss: -1.3502 | Best G: -1.8464\n"}
+,{"stream_name":"stdout","time":906.341452807,"data":"Epoch 250/300 | D Loss: -0.4198 | G Loss: -1.3713 | Best G: -2.0085\n"}
+,{"stream_name":"stdout","time":916.602511173,"data":"Epoch 260/300 | D Loss: -0.2681 | G Loss: -1.7863 | Best G: -2.0085\n"}
+,{"stream_name":"stdout","time":926.945530435,"data":"Epoch 270/300 | D Loss: -0.4428 | G Loss: -1.7065 | Best G: -2.0295\n"}
+,{"stream_name":"stdout","time":937.249319721,"data":"Epoch 280/300 | D Loss: -0.5226 | G Loss: -1.8470 | Best G: -2.0906\n"}
+,{"stream_name":"stdout","time":947.531301455,"data":"Epoch 290/300 | D Loss: -0.1354 | G Loss: -2.0159 | Best G: -2.1145\n"}
+,{"stream_name":"stdout","time":957.855199052,"data":"Epoch 300/300 | D Loss: -0.1249 | G Loss: -1.6589 | Best G: -2.1655\n"}
+,{"stream_name":"stdout","time":957.85526265,"data":"Training complete. Generator and EMA saved.\n"}
+,{"stream_name":"stdout","time":957.855271192,"data":"Successfully serialized weights and vectors to pretrained_qegans/stem_False_stop_True\n"}
+,{"stream_name":"stdout","time":957.855277486,"data":"\n"}
+,{"stream_name":"stdout","time":957.855296661,"data":"--- Training Condition: Stemming=False, Stopwords=False ---\n"}
+,{"stream_name":"stdout","time":960.038378735,"data":"Successfully generated 456 training triples.\n"}
+,{"stream_name":"stdout","time":970.351167108,"data":"Epoch 010/300 | D Loss: -0.1156 | G Loss: -0.4843 | Best G: -0.6939\n"}
+,{"stream_name":"stdout","time":980.594392078,"data":"Epoch 020/300 | D Loss: -0.0291 | G Loss: -0.6516 | Best G: -0.6939\n"}
+,{"stream_name":"stdout","time":990.936803137,"data":"Epoch 030/300 | D Loss: -0.0536 | G Loss: -0.6562 | Best G: -0.7028\n"}
+,{"stream_name":"stdout","time":1001.283680379,"data":"Epoch 040/300 | D Loss: -0.2559 | G Loss: -0.7104 | Best G: -0.7104\n"}
+,{"stream_name":"stdout","time":1011.617042899,"data":"Epoch 050/300 | D Loss: -0.1347 | G Loss: -0.8443 | Best G: -0.8821\n"}
+,{"stream_name":"stdout","time":1021.980899596,"data":"Epoch 060/300 | D Loss: -0.3578 | G Loss: -0.9873 | Best G: -1.1147\n"}
+,{"stream_name":"stdout","time":1032.239167977,"data":"Epoch 070/300 | D Loss: 0.0036 | G Loss: -1.1038 | Best G: -1.2326\n"}
+,{"stream_name":"stdout","time":1042.600984924,"data":"Epoch 080/300 | D Loss: -0.3499 | G Loss: -1.3119 | Best G: -1.3365\n"}
+,{"stream_name":"stdout","time":1052.90321358,"data":"Epoch 090/300 | D Loss: -0.3233 | G Loss: -1.3505 | Best G: -1.4753\n"}
+,{"stream_name":"stdout","time":1063.188211277,"data":"Epoch 100/300 | D Loss: -0.5342 | G Loss: -1.4709 | Best G: -1.6918\n"}
+,{"stream_name":"stdout","time":1073.4932533,"data":"Epoch 110/300 | D Loss: -0.3287 | G Loss: -1.6619 | Best G: -1.8340\n"}
+,{"stream_name":"stdout","time":1083.82381006,"data":"Epoch 120/300 | D Loss: -0.7240 | G Loss: -1.3223 | Best G: -1.8340\n"}
+,{"stream_name":"stdout","time":1094.071804109,"data":"Epoch 130/300 | D Loss: -0.2846 | G Loss: -1.5523 | Best G: -1.8340\n"}
+,{"stream_name":"stdout","time":1104.344249887,"data":"Epoch 140/300 | D Loss: -0.7541 | G Loss: -1.4374 | Best G: -1.8474\n"}
+,{"stream_name":"stdout","time":1114.661384226,"data":"Epoch 150/300 | D Loss: -0.8464 | G Loss: -1.9519 | Best G: -1.9519\n"}
+,{"stream_name":"stdout","time":1124.894778198,"data":"Epoch 160/300 | D Loss: -0.2249 | G Loss: -1.5380 | Best G: -2.0775\n"}
+,{"stream_name":"stdout","time":1135.139626897,"data":"Epoch 170/300 | D Loss: -0.5016 | G Loss: -2.2140 | Best G: -2.2140\n"}
+,{"stream_name":"stdout","time":1145.391912175,"data":"Epoch 180/300 | D Loss: -0.3932 | G Loss: -2.2695 | Best G: -2.2695\n"}
+,{"stream_name":"stdout","time":1155.653368619,"data":"Epoch 190/300 | D Loss: 0.0690 | G Loss: -2.0964 | Best G: -2.2695\n"}
+,{"stream_name":"stdout","time":1165.977215807,"data":"Epoch 200/300 | D Loss: -0.7855 | G Loss: -1.6287 | Best G: -2.2806\n"}
+,{"stream_name":"stdout","time":1176.252955698,"data":"Epoch 210/300 | D Loss: -0.3212 | G Loss: -2.1425 | Best G: -2.6476\n"}
+,{"stream_name":"stdout","time":1186.499420604,"data":"Epoch 220/300 | D Loss: -0.2623 | G Loss: -2.0427 | Best G: -2.6476\n"}
+,{"stream_name":"stdout","time":1196.728701747,"data":"Epoch 230/300 | D Loss: -0.4821 | G Loss: -1.8859 | Best G: -2.6476\n"}
+,{"stream_name":"stdout","time":1206.961322594,"data":"Epoch 240/300 | D Loss: -0.3488 | G Loss: -2.5929 | Best G: -2.6476\n"}
+,{"stream_name":"stdout","time":1217.202783366,"data":"Epoch 250/300 | D Loss: -0.1250 | G Loss: -2.4241 | Best G: -2.6476\n"}
+,{"stream_name":"stdout","time":1227.432161521,"data":"Epoch 260/300 | D Loss: -0.4801 | G Loss: -2.6768 | Best G: -2.6768\n"}
+,{"stream_name":"stdout","time":1237.741297274,"data":"Epoch 270/300 | D Loss: -0.5181 | G Loss: -2.4288 | Best G: -2.9204\n"}
+,{"stream_name":"stdout","time":1247.99260292,"data":"Epoch 280/300 | D Loss: -0.0271 | G Loss: -2.3539 | Best G: -2.9204\n"}
+,{"stream_name":"stdout","time":1258.381137493,"data":"Epoch 290/300 | D Loss: -0.1247 | G Loss: -2.5250 | Best G: -2.9204\n"}
+,{"stream_name":"stdout","time":1268.476950757,"data":"Epoch 300/300 | D Loss: -0.3314 | G Loss: -2.4565 | Best G: -2.9204\n"}
+,{"stream_name":"stdout","time":1268.476988854,"data":"Training complete. Generator and EMA saved.\n"}
+,{"stream_name":"stdout","time":1268.476995585,"data":"Successfully serialized weights and vectors to pretrained_qegans/stem_False_stop_False\n"}
+,{"stream_name":"stdout","time":1268.64915514,"data":"\n"}
+,{"stream_name":"stdout","time":1268.649182257,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":1268.649187606,"data":"RAW USER QUERY: 'automated information retrieval systems'\n"}
+,{"stream_name":"stdout","time":1268.649192276,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":1268.6491969,"data":"\n"}
+,{"stream_name":"stdout","time":1268.649201192,"data":"▶ CONFIGURATION: Stemming=ON,  Stopwords=REMOVED\n"}
+,{"stream_name":"stdout","time":1268.64920625,"data":"   Preprocessed Input: 'autom inform retriev system'\n"}
+,{"stream_name":"stdout","time":1268.64921083,"data":"   Top-8 Expanded Terms \u0026 Cosine Weights:\n"}
+,{"stream_name":"stdout","time":1268.649215541,"data":"   ---------------------------------------------\n"}
+,{"stream_name":"stdout","time":1268.649220093,"data":"     [01]  librari            | Score: 0.2634\n"}
+,{"stream_name":"stdout","time":1268.649224531,"data":"     [02]  use                | Score: 0.2375\n"}
+,{"stream_name":"stdout","time":1268.649228993,"data":"     [03]  remot              | Score: 0.2284\n"}
+,{"stream_name":"stdout","time":1268.649233453,"data":"     [04]  result             | Score: 0.2268\n"}
+,{"stream_name":"stdout","time":1268.649237878,"data":"     [05]  california         | Score: 0.2138\n"}
+,{"stream_name":"stdout","time":1268.64924235,"data":"     [06]  test               | Score: 0.2131\n"}
+,{"stream_name":"stdout","time":1268.649246791,"data":"     [07]  equip              | Score: 0.2115\n"}
+,{"stream_name":"stdout","time":1268.649251253,"data":"     [08]  perform            | Score: 0.2099\n"}
+,{"stream_name":"stdout","time":1268.649255705,"data":"\n"}
+,{"stream_name":"stdout","time":1268.649260015,"data":"▶ CONFIGURATION: Stemming=ON,  Stopwords=KEPT\n"}
+,{"stream_name":"stdout","time":1268.649264448,"data":"   Preprocessed Input: 'autom inform retriev system'\n"}
+,{"stream_name":"stdout","time":1268.649268907,"data":"   Top-8 Expanded Terms \u0026 Cosine Weights:\n"}
+,{"stream_name":"stdout","time":1268.649273399,"data":"   ---------------------------------------------\n"}
+,{"stream_name":"stdout","time":1268.649277854,"data":"     [01]  user               | Score: 0.2236\n"}
+,{"stream_name":"stdout","time":1268.64928227,"data":"     [02]  for                | Score: 0.2162\n"}
+,{"stream_name":"stdout","time":1268.649286682,"data":"     [03]  perform            | Score: 0.2145\n"}
+,{"stream_name":"stdout","time":1268.649291153,"data":"     [04]  test               | Score: 0.2090\n"}
+,{"stream_name":"stdout","time":1268.649295593,"data":"     [05]  librari            | Score: 0.2069\n"}
+,{"stream_name":"stdout","time":1268.649300051,"data":"     [06]  put                | Score: 0.1875\n"}
+,{"stream_name":"stdout","time":1268.649304448,"data":"     [07]  search             | Score: 0.1844\n"}
+,{"stream_name":"stdout","time":1268.64930885,"data":"     [08]  computer           | Score: 0.1821\n"}
+,{"stream_name":"stdout","time":1268.649313283,"data":"\n"}
+,{"stream_name":"stdout","time":1268.649317551,"data":"▶ CONFIGURATION: Stemming=OFF, Stopwords=REMOVED\n"}
+,{"stream_name":"stdout","time":1268.649334589,"data":"   Preprocessed Input: 'automated information retrieval systems'\n"}
+,{"stream_name":"stdout","time":1268.64933832,"data":"   Top-8 Expanded Terms \u0026 Cosine Weights:\n"}
+,{"stream_name":"stdout","time":1268.649341808,"data":"   ---------------------------------------------\n"}
+,{"stream_name":"stdout","time":1268.64934528,"data":"     [01]  great              | Score: 0.2744\n"}
+,{"stream_name":"stdout","time":1268.649348727,"data":"     [02]  explore            | Score: 0.2666\n"}
+,{"stream_name":"stdout","time":1268.649352161,"data":"     [03]  massachusetts      | Score: 0.2596\n"}
+,{"stream_name":"stdout","time":1268.649355584,"data":"     [04]  designed           | Score: 0.2501\n"}
+,{"stream_name":"stdout","time":1268.649359033,"data":"     [05]  capabilities       | Score: 0.2493\n"}
+,{"stream_name":"stdout","time":1268.649362448,"data":"     [06]  microfiche         | Score: 0.2474\n"}
+,{"stream_name":"stdout","time":1268.6493659,"data":"     [07]  remote             | Score: 0.2377\n"}
+,{"stream_name":"stdout","time":1268.649369795,"data":"     [08]  equipment          | Score: 0.2150\n"}
+,{"stream_name":"stdout","time":1268.6493733,"data":"\n"}
+,{"stream_name":"stdout","time":1268.649376589,"data":"▶ CONFIGURATION: Stemming=OFF, Stopwords=KEPT\n"}
+,{"stream_name":"stdout","time":1268.649380151,"data":"   Preprocessed Input: 'automated information retrieval systems'\n"}
+,{"stream_name":"stdout","time":1268.649383725,"data":"   Top-8 Expanded Terms \u0026 Cosine Weights:\n"}
+,{"stream_name":"stdout","time":1268.649388353,"data":"   ---------------------------------------------\n"}
+,{"stream_name":"stdout","time":1268.649391886,"data":"     [01]  for                | Score: 0.2747\n"}
+,{"stream_name":"stdout","time":1268.649395351,"data":"     [02]  evaluation         | Score: 0.2506\n"}
+,{"stream_name":"stdout","time":1268.649398824,"data":"     [03]  system             | Score: 0.2502\n"}
+,{"stream_name":"stdout","time":1268.64940232,"data":"     [04]  data               | Score: 0.2152\n"}
+,{"stream_name":"stdout","time":1268.649405761,"data":"     [05]  compact            | Score: 0.2134\n"}
+,{"stream_name":"stdout","time":1268.64940928,"data":"     [06]  such               | Score: 0.2132\n"}
+,{"stream_name":"stdout","time":1268.649412736,"data":"     [07]  distinct           | Score: 0.2130\n"}
+,{"stream_name":"stdout","time":1268.649416161,"data":"     [08]  sharing            | Score: 0.2091\n"}
+,{"stream_name":"stderr","time":1273.598345809,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":1273.598379073,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":1273.745282645,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":1273.745321099,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":1274.35146337,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":1274.655447771,"data":"[NbConvertApp] Writing 58040 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":1276.952999796,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":1277.806387514,"data":"[NbConvertApp] Writing 406056 bytes to __results__.html\n"}
+]
