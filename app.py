@@ -21,7 +21,6 @@ from inverted_index.inverted_index import InvertedIndex
 from scoring.scoring import ScoringResults
 from query_expansion.query_expansion import QueryExpander
 from document_retrieval.retrieval import retrieve_documents
-from document_retrieval.retrieval import retrieve_documents
 
 
 # Page config
@@ -232,13 +231,6 @@ def run_search(query, settings, expanded_terms=None):
     if expanded_terms is None:
         expanded_terms = run_expand_query(query, settings)
     expanded_tokens = tokens + [term for term, _ in expanded_terms]
-
-    rank_original = retrieve_documents({"q": tokens}, system["processed_docs"])["q"]
-    rank_expanded = retrieve_documents({"q": expanded_tokens}, system["processed_docs"])["q"]
-
-    rank_original = retrieve_documents({"q": tokens}, system["processed_docs"])["q"]
-    rank_expanded = retrieve_documents({"q": expanded_tokens}, system["processed_docs"])["q"]
-
     ranked = retrieve_documents(
         {"__original__": tokens, "__expanded__": expanded_tokens},
         system["processed_docs"],
@@ -249,8 +241,8 @@ def run_search(query, settings, expanded_terms=None):
         "expanded_terms": expanded_terms,
         "map_original": 0.0,
         "map_expanded": 0.0,
-        "ranking_original": format_ranking_to_df(rank_original),
-        "ranking_expanded": format_ranking_to_df(rank_expanded),
+        "ranking_original": format_ranking_to_df(ranked["__original__"]),
+        "ranking_expanded": format_ranking_to_df(ranked["__expanded__"]),
     }
 
 
@@ -323,11 +315,19 @@ def run_batch_processing(uploaded_file, settings):
             remove_stopwords=settings["remove_stopwords"],
         )
         expanded_terms = run_expand_query(query_str, settings)
-        expanded_tokens = tokens + [term for term, _ in expanded_terms]
+        original_tokens[qid] = tokens
+        expanded_tokens[qid] = tokens + [term for term, _ in expanded_terms]
+        expansion_counts[qid] = len(expanded_terms)
 
-        ranking_original = retrieve_documents({qid: tokens}, system["processed_docs"])[qid]
-        ranking_expanded = retrieve_documents({qid: expanded_tokens}, system["processed_docs"])[qid]
+    ranked_original = retrieve_documents(
+        original_tokens, system["processed_docs"], scoring_options
+    )
+    ranked_expanded = retrieve_documents(
+        expanded_tokens, system["processed_docs"], scoring_options
+    )
 
+    summary_rows = []
+    for qid, query_str in queries.items():
         summary_rows.append(
             {
                 "Query ID": qid,
