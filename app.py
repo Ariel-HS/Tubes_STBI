@@ -1,4 +1,5 @@
 import random
+import time
 
 import pandas as pd
 import streamlit as st
@@ -398,7 +399,9 @@ with interactive_tab:
         if not query.strip():
             st.warning("Please enter a search query first.")
         else:
-            results = mock_search(query, settings)
+            with st.spinner("Running GAN model and expanding query..."):
+                time.sleep(1)
+                results = mock_search(query, settings)
 
             metric_col1, metric_col2 = st.columns(2)
             with metric_col1:
@@ -463,7 +466,16 @@ with batch_tab:
         if uploaded_file is None:
             st.warning("Please upload a .txt query file first.")
         else:
-            batch_result = mock_process_batch(uploaded_file.getvalue())
+            file_bytes = uploaded_file.getvalue()
+            if not file_bytes.decode("utf-8", errors="ignore").strip():
+                st.error(
+                    "The uploaded file is empty. Please provide a valid query file."
+                )
+                st.stop()
+
+            with st.spinner("Processing batch queries and calculating MAP..."):
+                time.sleep(1.5)
+                batch_result = mock_process_batch(file_bytes)
             st.success(f"Processed {batch_result['num_queries']} queries successfully.")
 
             mean_col1, mean_col2 = st.columns(2)
