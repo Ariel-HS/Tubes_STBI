@@ -3,8 +3,25 @@ import time
 
 import pandas as pd
 import streamlit as st
+import math
+from collections import Counter
+import ssl
+import nltk
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+nltk.download('stopwords', quiet=True)
 
 from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
+from preprocessing.preprocessing import load_smart, preprocess, preprocess_collection
+from inverted_index.inverted_index import InvertedIndex
+from scoring.scoring import ScoringResults
+from query_expansion.query_expansion import QueryExpander
 
 
 # Page config
@@ -123,84 +140,182 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# ---------------------------------------------------------------------------
-# Mock (dummy CISI-format data)
-# ---------------------------------------------------------------------------
-# These imitate the shape of data the real backend will return. Replace them
-# with the real engine (GAN query expansion, MAP evaluation, retrieval) later.
-EXPANSION_CANDIDATES = [
-    "retrieval", "document", "ranking", "relevance", "semantic",
-    "indexing", "similarity", "vector", "corpus", "feedback",
-    "embedding", "synonym", "context", "language", "generative",
-]
-
-INDEX_TERMS = [
-    "dewey", "classification", "library", "system", "edition",
-    "index", "history", "decimal", "growth", "study",
-    "automatic", "retrieval", "title", "article", "relevance",
-]
+DATA_DIR = "data"
+MODEL_DIR = "models/pretrained_qegans"
 
 
-def mock_expand_query(query, limit, add_all):
-    """Return (term, weight) pairs imitating GAN query expansion."""
-    random.seed(hash(query) & 0xFFFFFFFF)
-    weights = [(t, round(random.uniform(0.30, 0.95), 3)) for t in EXPANSION_CANDIDATES]
-    weights.sort(key=lambda x: x[1], reverse=True)
-    if not add_all:
-        weights = weights[: max(0, limit)]
-    return weights
+@st.cache_resource(show_spinner=False)
+def get_query_expander(use_stemming: bool, remove_stopwords: bool):
+    """Load (once) the pretrained GAN QueryExpander for this preprocessing config.
+
+    NOTE: the backend's parameter is named `use_stopwords`; we map the UI's
+    `remove_stopwords` flag straight onto it so the prefix
+    `stem_{use_stemming}_stop_{remove_stopwords}` selects the matching model.
+    Confirm this semantic mapping is correct during Phase 3 wiring.
+    """
+    return QueryExpander(
+        use_stemming=use_stemming,
+        use_stopwords=remove_stopwords,
+        model_dir=MODEL_DIR,
+    )
 
 
-def mock_ranking(seed_key):
-    """Return a dummy ranked-document table in CISI doc-id format."""
-    random.seed(hash(seed_key) & 0xFFFFFFFF)
-    rows = []
-    score = 0.95
-    for rank in range(1, 11):
-        rows.append(
-            {
-                "Rank": rank,
-                "Document ID": str(random.randint(1, 1488)),
-                "Similarity": round(score, 4),
-            }
-        )
-        score -= random.uniform(0.02, 0.08)
-    return pd.DataFrame(rows)
+@st.cache_resource(show_spinner=False)
+def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
+                         tf_weight: TFWeight, tfidf_scheme: TFIDFScheme):
+    """Load the CISI corpus and build the inverted index + scoring tables once.
 
-
-def mock_search(query, settings):
-    """Return mock retrieval results for a single query."""
-    random.seed(hash(query) & 0xFFFFFFFF)
-    expanded = mock_expand_query(
-        query, settings["expansion_limit"], settings["add_all_words"]
+    Cached on the primitive, hashable settings that actually change the corpus or
+    the weights (the raw `settings` dict carries a ScoringOptions object that
+    Streamlit can't hash, so we pass the individual fields instead). Returns a
+    dict the retrieval step can reuse without rebuilding the index every search.
+    """
+    processed_docs = preprocess_collection(
+        load_smart(f"{DATA_DIR}/cisi.all"),
+        stem=use_stemming,
+        remove_stopwords=remove_stopwords,
+    )
+    inverted_index = InvertedIndex(processed_docs)
+    scoring_options = ScoringOptions(
+        docs_tf_weight=tf_weight,
+        docs_tf_idf_scheme=tfidf_scheme,
+        query_tf_weight=tf_weight,
+        query_tf_idf_scheme=tfidf_scheme,
+    )
+    scoring_results = ScoringResults(
+        inverted_index, len(processed_docs), scoring_options
     )
     return {
+        "processed_docs": processed_docs,
+        "inverted_index": inverted_index,
+        "scoring_results": scoring_results,
+        "scoring_options": scoring_options,
+    }
+
+def _rank_query(tokens, system):
+    """Rank documents for query tokens using the cached scoring tables.
+
+    Mirrors document_retrieval.retrieval.retrieve_documents()'s per-query scoring,
+    but reuses the cached InvertedIndex / ScoringResults instead of rebuilding the
+    index on every search. Returns [(doc_id, score), ...] sorted best-first.
+    """
+    scoring = system["scoring_results"]
+    options = system["scoring_options"]
+    idf = scoring.idf
+    docs_weight = scoring.tf_idf
+    doc_lengths = scoring.doc_lengths
+
+    term_tf = Counter(tokens)
+    q_max_tf = max(term_tf.values()) if term_tf else 1
+
+    scores = {}
+    query_length = 0.0
+    for term, q_tf in term_tf.items():
+        if term not in idf:
+            continue
+        if options.query_tf_weight == TFWeight.RAW_TF:
+            q_weight = q_tf * idf[term]
+        elif options.query_tf_weight == TFWeight.LOG_TF:
+            q_weight = (1 + math.log2(q_tf)) * idf[term]
+        elif options.query_tf_weight == TFWeight.BINARY_TF:
+            q_weight = 1 * idf[term]
+        else: 
+            q_weight = (0.5 + 0.5 * q_tf / q_max_tf) * idf[term]
+
+        query_length += q_weight ** 2
+        for doc_id, d_weight in docs_weight[term].items():
+            scores[doc_id] = scores.get(doc_id, 0.0) + q_weight * d_weight
+
+    if options.docs_tf_idf_scheme == TFIDFScheme.NORMALIZED:
+        for doc_id in scores:
+            d_norm = doc_lengths[doc_id] if doc_lengths[doc_id] > 0 else 1
+            scores[doc_id] /= d_norm
+    if options.query_tf_idf_scheme == TFIDFScheme.NORMALIZED:
+        q_norm = math.sqrt(query_length) if query_length > 0 else 1
+        for doc_id in scores:
+            scores[doc_id] /= q_norm
+
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+
+def run_expand_query(query, settings):
+    """Real GAN query expansion. Returns [(term, weight), ...]."""
+    tokens = preprocess(
+        query,
+        stem=settings["use_stemming"],
+        remove_stopwords=settings["remove_stopwords"],
+    )
+    if not tokens:
+        return []
+    expander = get_query_expander(
+        settings["use_stemming"], settings["remove_stopwords"]
+    )
+    return expander.expand(
+        " ".join(tokens),
+        top_k=settings["expansion_limit"],
+        return_all=settings["add_all_words"],
+    )
+
+
+def run_search(query, settings):
+    """Run retrieval for both the original and the GAN-expanded query."""
+    system = get_retrieval_system(
+        settings["use_stemming"],
+        settings["remove_stopwords"],
+        settings["tf_weight"],
+        settings["tfidf_scheme"],
+    )
+    tokens = preprocess(
+        query,
+        stem=settings["use_stemming"],
+        remove_stopwords=settings["remove_stopwords"],
+    )
+    expanded_terms = run_expand_query(query, settings)
+    expanded_tokens = tokens + [term for term, _ in expanded_terms]
+
+    return {
         "original_query": query,
-        "expanded_terms": expanded,
-        "map_original": round(random.uniform(0.20, 0.45), 4),
-        "map_expanded": round(random.uniform(0.45, 0.70), 4),
-        "ranking_original": mock_ranking(query + "_orig"),
-        "ranking_expanded": mock_ranking(query + "_exp"),
+        "expanded_terms": expanded_terms,
+        "map_original": 0.0,
+        "map_expanded": 0.0,
+        "ranking_original": format_ranking_to_df(_rank_query(tokens, system)),
+        "ranking_expanded": format_ranking_to_df(_rank_query(expanded_tokens, system)),
     }
 
 
-def mock_inverted_index(doc_id):
-    """Return a wide mock inverted-index slice for one document."""
-    random.seed(hash(doc_id) & 0xFFFFFFFF)
+def get_index_stats(doc_id, system):
+    """Pull inverted-index entries for one document from the cached index.
+
+    Returns (stats, dataframe): stats holds corpus totals, and the DataFrame lists
+    every term occurring in the requested document with its TF / DF / IDF / TF-IDF.
+    """
+    inverted_index = system["inverted_index"].inverted_index
+    scoring = system["scoring_results"]
+    doc_id = str(doc_id)
+
     rows = []
-    for term in INDEX_TERMS:
-        tf = random.randint(1, 12)
-        rows.append(
-            {
-                "Term": term,
-                "Term Frequency": tf,
-                "Document Frequency": random.randint(1, 400),
-                "IDF": round(random.uniform(0.5, 9.5), 4),
-                "TF-IDF Weight": round(tf * random.uniform(0.5, 9.5), 4),
-            }
-        )
-    return pd.DataFrame(rows)
+    for term, postings in inverted_index.items():
+        if doc_id in postings:
+            rows.append(
+                {
+                    "Term": term,
+                    "Term Frequency": postings[doc_id],
+                    "Document Frequency": len(postings),
+                    "IDF": round(scoring.idf[term], 4),
+                    "TF-IDF Weight": round(scoring.tf_idf[term][doc_id], 4),
+                }
+            )
+    rows.sort(key=lambda r: r["Term Frequency"], reverse=True)
+    df = pd.DataFrame(
+        rows,
+        columns=["Term", "Term Frequency", "Document Frequency", "IDF", "TF-IDF Weight"],
+    )
+    stats = {
+        "total_terms": len(inverted_index),
+        "total_docs": len(system["processed_docs"]),
+        "doc_term_count": len(rows),
+    }
+    return stats, df
 
 
 def mock_process_batch(file_bytes):
@@ -400,8 +515,7 @@ with interactive_tab:
             st.warning("Please enter a search query first.")
         else:
             with st.spinner("Running GAN model and expanding query..."):
-                time.sleep(1)
-                results = mock_search(query, settings)
+                results = run_search(query, settings)
 
             metric_col1, metric_col2 = st.columns(2)
             with metric_col1:
@@ -535,9 +649,28 @@ with index_tab:
         if not inspect_doc_id.strip():
             st.warning("Please enter a document ID first.")
         else:
-            render_query_badge("Document", inspect_doc_id)
-            st.dataframe(
-                mock_inverted_index(inspect_doc_id),
-                use_container_width=True,
-                hide_index=True,
+            system = get_retrieval_system(
+                settings["use_stemming"],
+                settings["remove_stopwords"],
+                settings["tf_weight"],
+                settings["tfidf_scheme"],
             )
+            stats, index_df = get_index_stats(inspect_doc_id, system)
+
+            stat_col1, stat_col2, stat_col3 = st.columns(3)
+            stat_col1.metric("Total Terms (corpus)", f"{stats['total_terms']:,}")
+            stat_col2.metric("Total Documents", f"{stats['total_docs']:,}")
+            stat_col3.metric("Terms in This Document", f"{stats['doc_term_count']:,}")
+
+            render_query_badge("Document", inspect_doc_id.strip())
+            if index_df.empty:
+                st.info(
+                    f"No inverted-index entries found for document "
+                    f"'{inspect_doc_id.strip()}'. Check the document ID."
+                )
+            else:
+                st.dataframe(
+                    index_df,
+                    use_container_width=True,
+                    hide_index=True,
+                )
