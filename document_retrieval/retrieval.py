@@ -1,6 +1,7 @@
 from collections import defaultdict
 import math
 from inverted_index.inverted_index import InvertedIndex
+from mAP.map import calculate_average_precision
 from scoring.scoring import ScoringResults
 from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
 
@@ -9,8 +10,11 @@ from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
 # - Query tokens (Dict of List of String), 
 # - Processed documents (Dict of List of String), 
 # - Scoring options (TF Weighting and TF-IDF Scheme)
+# - ground_truths (optional): Dict of qid -> relevant doc IDs
 # Return: 
-# - Ranked Documents for each query (Dict of List of Tuples { qid: [(doc_id, score), ...], ... })
+# - Ranked Documents for each query
+# - If ground_truths is provided, also returns per-query AP as a second value
+#   and preserves backward compatibility when ground_truths is None.
 def retrieve_documents(
     query_tokens: dict[str, list[str]],
     processed_docs: dict[str, list[str]],
@@ -18,8 +22,9 @@ def retrieve_documents(
         docs_tf_weight=TFWeight.RAW_TF, 
         docs_tf_idf_scheme=TFIDFScheme.NORMALIZED, 
         query_tf_weight=TFWeight.RAW_TF, 
-        query_tf_idf_scheme=TFIDFScheme.NORMALIZED)
-) -> dict[str, list[tuple[str, float]]]:
+        query_tf_idf_scheme=TFIDFScheme.NORMALIZED),
+    ground_truths: dict[str, set[str]] | None = None,
+) -> dict[str, list[tuple[str, float]]] | tuple[dict[str, list[tuple[str, float]]], dict[str, float]]:
     # Calculate term frequencies within the query
     queries_tf = defaultdict(lambda: defaultdict(int))
     queries_max_tf = defaultdict(int)
@@ -42,6 +47,7 @@ def retrieve_documents(
     idf, docs_weight, doc_lengths = scoring_results.idf, scoring_results.tf_idf, scoring_results.doc_lengths
 
     ranked_docs = {}
+    query_average_precision: dict[str, float] = {}
 
     for qid, terms in queries_tf.items():
         scores = defaultdict(float)
@@ -81,5 +87,12 @@ def retrieve_documents(
 
         # Sort scores in descending order
         ranked_docs[qid] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        if ground_truths is not None:
+            query_average_precision[qid] = calculate_average_precision(
+                ranked_docs[qid], ground_truths.get(qid, set())
+            )
     
+    if ground_truths is not None:
+        return ranked_docs, query_average_precision
+
     return ranked_docs

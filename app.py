@@ -16,7 +16,7 @@ else:
 nltk.download('stopwords', quiet=True)
 
 from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
-from preprocessing.preprocessing import load_smart, preprocess, preprocess_collection
+from preprocessing.preprocessing import load_qrels, load_smart, preprocess, preprocess_collection
 from inverted_index.inverted_index import InvertedIndex
 from scoring.scoring import ScoringResults
 from query_expansion.query_expansion import QueryExpander
@@ -181,12 +181,14 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
     scoring_results = ScoringResults(
         inverted_index, len(processed_docs), scoring_options
     )
+    ground_truths = load_qrels(f"{DATA_DIR}/qrels.text")
     return {
         "raw_texts": raw_texts,
         "processed_docs": processed_docs,
         "inverted_index": inverted_index,
         "scoring_results": scoring_results,
         "scoring_options": scoring_options,
+        "ground_truths": ground_truths,
     }
 
 def _build_scoring_options(settings):
@@ -195,6 +197,18 @@ def _build_scoring_options(settings):
         docs_tf_idf_scheme=_NORM_TO_ENUM[settings["doc_norm"]],
         query_tf_weight=_WEIGHT_TO_ENUM[settings["query_tf_variant"]],
         query_tf_idf_scheme=_NORM_TO_ENUM[settings["query_norm"]],
+    )
+
+
+def rank_queries(
+        query_tokens, system, scoring_options, ground_truths=None
+    ) -> dict[str, list[tuple[str, float]]] | tuple[dict[str, list[tuple[str, float]]], dict[str, float]]:
+    """Rank one or more queries using the cached retrieval system."""
+    return retrieve_documents(
+        query_tokens,
+        system["processed_docs"],
+        scoring_options,
+        ground_truths=ground_truths,
     )
 
 
@@ -231,19 +245,23 @@ def run_search(query, settings, expanded_terms=None):
     if expanded_terms is None:
         expanded_terms = run_expand_query(query, settings)
     expanded_tokens = tokens + [term for term, _ in expanded_terms]
-    ranked = retrieve_documents(
-        {"__original__": tokens, "__expanded__": expanded_tokens},
-        system["processed_docs"],
-        _build_scoring_options(settings),
+    scoring_options = _build_scoring_options(settings)
+
+    ranked_original = rank_queries(
+        {"original": tokens}, system, scoring_options
     )
+    ranked_expanded = rank_queries(
+        {"expanded": expanded_tokens}, system, scoring_options
+    )
+
     return {
         "original_query": query,
         "preprocessed_tokens": tokens,
         "expanded_terms": expanded_terms,
         "map_original": 0.0,
         "map_expanded": 0.0,
-        "ranking_original": format_ranking_to_df(ranked["__original__"]),
-        "ranking_expanded": format_ranking_to_df(ranked["__expanded__"]),
+        "ranking_original": format_ranking_to_df(ranked_original["original"]),
+        "ranking_expanded": format_ranking_to_df(ranked_expanded["expanded"]),
     }
 
 
@@ -320,12 +338,14 @@ def run_batch_processing(uploaded_file, settings):
         expanded_tokens[qid] = tokens + [term for term, _ in expanded_terms]
         expansion_counts[qid] = len(expanded_terms)
 
-    ranked_original = retrieve_documents(
-        original_tokens, system["processed_docs"], scoring_options
-    )
-    ranked_expanded = retrieve_documents(
-        expanded_tokens, system["processed_docs"], scoring_options
-    )
+    ranked_original = rank_queries(original_tokens, system, scoring_options, ground_truths=system["ground_truths"])
+    if isinstance(ranked_original, tuple):
+        ranked_original, query_average_precision = ranked_original
+        map_original = sum(query_average_precision.values()) / len(query_average_precision) if query_average_precision else 0.0
+    ranked_expanded = rank_queries(expanded_tokens, system, scoring_options, ground_truths=system["ground_truths"])
+    if isinstance(ranked_expanded, tuple):
+        ranked_expanded, query_average_precision_expanded = ranked_expanded
+        map_expanded = sum(query_average_precision_expanded.values()) / len(query_average_precision_expanded) if query_average_precision_expanded else 0.0
 
     summary_rows = []
     for qid, query_str in queries.items():
@@ -336,8 +356,8 @@ def run_batch_processing(uploaded_file, settings):
                 "Expansion Terms": expansion_counts[qid],
                 "Docs Retrieved (Original)": len(ranked_original.get(qid, [])),
                 "Docs Retrieved (Expanded)": len(ranked_expanded.get(qid, [])),
-                "MAP Original": 0.0,
-                "MAP Expanded": 0.0,
+                "MAP Original": map_original,
+                "MAP Expanded": map_expanded,
             }
         )
 

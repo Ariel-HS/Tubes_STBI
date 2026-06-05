@@ -58,3 +58,18 @@ def preprocess_collection(
         doc_id: preprocess(text, stem=stem, remove_stopwords=remove_stopwords)
         for doc_id, text in docs.items()
     }
+
+def load_qrels(qrels_path: str) -> dict[str, set[str]]:
+    """Parse a qrels file into a query -> relevant document set mapping."""
+    qrels: dict[str, set[str]] = {}
+    with open(qrels_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) < 2:
+                continue
+            q_id = parts[0]
+            d_id = parts[1]
+            if q_id not in qrels:
+                qrels[q_id] = set()
+            qrels[q_id].add(d_id)
+    return qrels
