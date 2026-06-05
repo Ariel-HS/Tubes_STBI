@@ -238,6 +238,7 @@ def run_search(query, settings, expanded_terms=None):
     )
     return {
         "original_query": query,
+        "preprocessed_tokens": tokens,
         "expanded_terms": expanded_terms,
         "map_original": 0.0,
         "map_expanded": 0.0,
@@ -381,14 +382,17 @@ def render_metric_card(title, value, accent=False, delta=""):
 
 
 def render_query_badge(label, query, expanded_terms=None):
-    body = query
+    if isinstance(query, list):
+        body = "[" + ", ".join(f"'{token}'" for token in query) + "]"
+    else:
+        body = query
     if expanded_terms:
         max_terms = 15
         shown_terms = expanded_terms[:max_terms]
         highlights = " ".join(
             f'<span class="highlight">{term}</span>' for term, _ in shown_terms
         )
-        body = f"{query} {highlights}"
+        body = f"{body} {highlights}"
         remaining = len(expanded_terms) - len(shown_terms)
         if remaining > 0:
             body += f' <span class="label">...and {remaining} more terms</span>'
@@ -534,7 +538,7 @@ with interactive_tab:
         res_col1, res_col2 = st.columns(2)
         with res_col1:
             st.subheader("Original Query Results")
-            render_query_badge("Original Query", results["original_query"])
+            render_query_badge("Original Query", results["preprocessed_tokens"])
             st.dataframe(
                 results["ranking_original"],
                 use_container_width=True,
@@ -544,7 +548,7 @@ with interactive_tab:
             st.subheader("Expanded Query Results")
             render_query_badge(
                 "Expanded Query (GAN)",
-                results["original_query"],
+                results["preprocessed_tokens"],
                 expanded_terms=results["expanded_terms"],
             )
             st.dataframe(
