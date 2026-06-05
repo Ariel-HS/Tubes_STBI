@@ -14,7 +14,7 @@ A [Streamlit](https://streamlit.io/) app (`app.py`) is the main user-facing fron
 ## Requirements
 
 - **Python 3.9+** (uses built-in generic syntax like `dict[str, list[str]]` and implicit namespace packages)
-- Dependencies listed in `requirements.txt`: `streamlit`, `pandas`, `nltk`, `numpy`, `scipy`, `scikit-learn`, `torch`
+- Dependencies listed in `requirements.txt`: `streamlit`, `pandas`, `nltk`, `numpy`, `scipy`, `scikit-learn`, `torch` (plus `matplotlib` and `jupyter`, used only by the benchmark notebook)
 
 ## Installation
 
@@ -43,6 +43,16 @@ streamlit run app.py
 ```
 
 Then open the local URL shown in the terminal (usually `http://localhost:8501`).
+
+## Benchmark
+
+`benchmark.py` evaluates retrieval quality across **all 32 scoring variations** (4 preprocessing × 4 TF weights × 2 normalization schemes), comparing **MAP** for original vs GAN-expanded queries over the judged queries in `qrels.text`.
+
+```bash
+python benchmark.py # prints the numerical result table and writes benchmark_results.csv
+```
+
+For a color-graded table view, open `benchmark.ipynb` (VS Code or Jupyter) and Run All — it reuses `run_benchmark()` from `benchmark.py`.
 
 ## Architecture
 
