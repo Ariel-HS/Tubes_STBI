@@ -146,13 +146,6 @@ MODEL_DIR = "models/pretrained_qegans"
 
 @st.cache_resource(show_spinner=False)
 def get_query_expander(use_stemming: bool, remove_stopwords: bool):
-    """Load (once) the pretrained GAN QueryExpander for this preprocessing config.
-
-    NOTE: the backend's parameter is named `use_stopwords`; we map the UI's
-    `remove_stopwords` flag straight onto it so the prefix
-    `stem_{use_stemming}_stop_{remove_stopwords}` selects the matching model.
-    Confirm this semantic mapping is correct during Phase 3 wiring.
-    """
     return QueryExpander(
         use_stemming=use_stemming,
         use_stopwords=remove_stopwords,
@@ -163,15 +156,9 @@ def get_query_expander(use_stemming: bool, remove_stopwords: bool):
 @st.cache_resource(show_spinner=False)
 def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
                          tf_weight: TFWeight, tfidf_scheme: TFIDFScheme):
-    """Load the CISI corpus and build the inverted index + scoring tables once.
-
-    Cached on the primitive, hashable settings that actually change the corpus or
-    the weights (the raw `settings` dict carries a ScoringOptions object that
-    Streamlit can't hash, so we pass the individual fields instead). Returns a
-    dict the retrieval step can reuse without rebuilding the index every search.
-    """
+    raw_texts = load_smart(f"{DATA_DIR}/cisi.all")
     processed_docs = preprocess_collection(
-        load_smart(f"{DATA_DIR}/cisi.all"),
+        raw_texts,
         stem=use_stemming,
         remove_stopwords=remove_stopwords,
     )
@@ -186,6 +173,7 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
         inverted_index, len(processed_docs), scoring_options
     )
     return {
+        "raw_texts": raw_texts,
         "processed_docs": processed_docs,
         "inverted_index": inverted_index,
         "scoring_results": scoring_results,
@@ -193,12 +181,6 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
     }
 
 def _rank_query(tokens, system):
-    """Rank documents for query tokens using the cached scoring tables.
-
-    Mirrors document_retrieval.retrieval.retrieve_documents()'s per-query scoring,
-    but reuses the cached InvertedIndex / ScoringResults instead of rebuilding the
-    index on every search. Returns [(doc_id, score), ...] sorted best-first.
-    """
     scoring = system["scoring_results"]
     options = system["scoring_options"]
     idf = scoring.idf
@@ -239,7 +221,6 @@ def _rank_query(tokens, system):
 
 
 def run_expand_query(query, settings):
-    """Real GAN query expansion. Returns [(term, weight), ...]."""
     tokens = preprocess(
         query,
         stem=settings["use_stemming"],
@@ -258,7 +239,6 @@ def run_expand_query(query, settings):
 
 
 def run_search(query, settings):
-    """Run retrieval for both the original and the GAN-expanded query."""
     system = get_retrieval_system(
         settings["use_stemming"],
         settings["remove_stopwords"],
@@ -284,11 +264,6 @@ def run_search(query, settings):
 
 
 def get_index_stats(doc_id, system):
-    """Pull inverted-index entries for one document from the cached index.
-
-    Returns (stats, dataframe): stats holds corpus totals, and the DataFrame lists
-    every term occurring in the requested document with its TF / DF / IDF / TF-IDF.
-    """
     inverted_index = system["inverted_index"].inverted_index
     scoring = system["scoring_results"]
     doc_id = str(doc_id)
@@ -319,7 +294,6 @@ def get_index_stats(doc_id, system):
 
 
 def mock_process_batch(file_bytes):
-    """Pretend to process a batch query file and return mock artifacts."""
     text = file_bytes.decode("utf-8", errors="ignore")
     queries = [ln.strip() for ln in text.splitlines() if ln.strip()]
 
@@ -352,12 +326,6 @@ def mock_process_batch(file_bytes):
 
 # Backend adapters
 def format_ranking_to_df(raw_ranking):
-    """Convert a raw ranking from the backend into the DataFrame the UI expects.
-
-    Input: list of (doc_id, score) tuples, already sorted best-first, as returned
-    by document_retrieval.retrieval.retrieve_documents()[qid].
-    Output: DataFrame with columns ["Rank", "Document ID", "Similarity"].
-    """
     rows = [
         {"Rank": rank, "Document ID": str(doc_id), "Similarity": round(float(score), 4)}
         for rank, (doc_id, score) in enumerate(raw_ranking, start=1)
@@ -515,54 +483,72 @@ with interactive_tab:
             st.warning("Please enter a search query first.")
         else:
             with st.spinner("Running GAN model and expanding query..."):
-                results = run_search(query, settings)
+                st.session_state["search_results"] = run_search(query, settings)
 
-            metric_col1, metric_col2 = st.columns(2)
-            with metric_col1:
-                render_metric_card(
-                    "MAP - Original Query", f"{results['map_original']:.4f}"
-                )
-            with metric_col2:
-                delta = results["map_expanded"] - results["map_original"]
-                render_metric_card(
-                    "MAP - Expanded Query",
-                    f"{results['map_expanded']:.4f}",
-                    accent=True,
-                    delta=f"+{delta:.4f} vs original",
-                )
-            st.write("")
+    results = st.session_state.get("search_results")
+    if results:
+        res_col1, res_col2 = st.columns(2)
+        with res_col1:
+            st.subheader("Original Query Results")
+            render_query_badge("Original Query", results["original_query"])
+            st.dataframe(
+                results["ranking_original"],
+                use_container_width=True,
+                hide_index=True,
+            )
+        with res_col2:
+            st.subheader("Expanded Query Results")
+            render_query_badge(
+                "Expanded Query (GAN)",
+                results["original_query"],
+                expanded_terms=results["expanded_terms"],
+            )
+            st.dataframe(
+                results["ranking_expanded"],
+                use_container_width=True,
+                hide_index=True,
+            )
 
-            res_col1, res_col2 = st.columns(2)
-            with res_col1:
-                st.subheader("Original Query Results")
-                render_query_badge("Original Query", results["original_query"])
+        if results["expanded_terms"]:
+            with st.expander("Expansion terms and weights"):
                 st.dataframe(
-                    results["ranking_original"],
+                    pd.DataFrame(
+                        results["expanded_terms"], columns=["Added Term", "Weight"]
+                    ),
                     use_container_width=True,
                     hide_index=True,
                 )
-            with res_col2:
-                st.subheader("Expanded Query Results")
-                render_query_badge(
-                    "Expanded Query (GAN)",
-                    results["original_query"],
-                    expanded_terms=results["expanded_terms"],
-                )
-                st.dataframe(
-                    results["ranking_expanded"],
-                    use_container_width=True,
-                    hide_index=True,
-                )
 
-            if results["expanded_terms"]:
-                with st.expander("Expansion terms and weights"):
-                    st.dataframe(
-                        pd.DataFrame(
-                            results["expanded_terms"], columns=["Added Term", "Weight"]
-                        ),
-                        use_container_width=True,
-                        hide_index=True,
+        # Document Viewer
+        st.subheader("Document Viewer")
+        retrieved_ids = list(
+            dict.fromkeys(
+                results["ranking_original"]["Document ID"].tolist()
+                + results["ranking_expanded"]["Document ID"].tolist()
+            )
+        )
+        if not retrieved_ids:
+            st.info("No documents to view for this query.")
+        else:
+            viewer_system = get_retrieval_system(
+                settings["use_stemming"],
+                settings["remove_stopwords"],
+                settings["tf_weight"],
+                settings["tfidf_scheme"],
+            )
+            raw_texts = viewer_system["raw_texts"]
+            selected_doc = st.selectbox(
+                "Select a retrieved Document ID to read its text",
+                options=retrieved_ids,
+                key="doc_viewer_select",
+            )
+            with st.expander(f"Document {selected_doc}", expanded=True):
+                st.write(
+                    raw_texts.get(
+                        str(selected_doc),
+                        "No text found for this document.",
                     )
+                )
 
 
 # Tab 2: Batch Processing
