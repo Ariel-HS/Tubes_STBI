@@ -181,46 +181,6 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
         "scoring_options": scoring_options,
     }
 
-def _rank_query(tokens, system):
-    scoring = system["scoring_results"]
-    options = system["scoring_options"]
-    idf = scoring.idf
-    docs_weight = scoring.tf_idf
-    doc_lengths = scoring.doc_lengths
-
-    term_tf = Counter(tokens)
-    q_max_tf = max(term_tf.values()) if term_tf else 1
-
-    scores = {}
-    query_length = 0.0
-    for term, q_tf in term_tf.items():
-        if term not in idf:
-            continue
-        if options.query_tf_weight == TFWeight.RAW_TF:
-            q_weight = q_tf * idf[term]
-        elif options.query_tf_weight == TFWeight.LOG_TF:
-            q_weight = (1 + math.log2(q_tf)) * idf[term]
-        elif options.query_tf_weight == TFWeight.BINARY_TF:
-            q_weight = 1 * idf[term]
-        else: 
-            q_weight = (0.5 + 0.5 * q_tf / q_max_tf) * idf[term]
-
-        query_length += q_weight ** 2
-        for doc_id, d_weight in docs_weight[term].items():
-            scores[doc_id] = scores.get(doc_id, 0.0) + q_weight * d_weight
-
-    if options.docs_tf_idf_scheme == TFIDFScheme.NORMALIZED:
-        for doc_id in scores:
-            d_norm = doc_lengths[doc_id] if doc_lengths[doc_id] > 0 else 1
-            scores[doc_id] /= d_norm
-    if options.query_tf_idf_scheme == TFIDFScheme.NORMALIZED:
-        q_norm = math.sqrt(query_length) if query_length > 0 else 1
-        for doc_id in scores:
-            scores[doc_id] /= q_norm
-
-    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-
 def run_expand_query(query, settings):
     tokens = preprocess(
         query,
