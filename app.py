@@ -341,25 +341,41 @@ def run_batch_processing(uploaded_file, settings):
     ranked_original = rank_queries(original_tokens, system, scoring_options, ground_truths=system["ground_truths"])
     if isinstance(ranked_original, tuple):
         ranked_original, query_average_precision = ranked_original
-        map_original = sum(query_average_precision.values()) / len(query_average_precision) if query_average_precision else 0.0
+        map_original = query_average_precision
+        map_original["__BATCH__"] = sum(query_average_precision.values()) / len(query_average_precision) if query_average_precision else 0.0
     ranked_expanded = rank_queries(expanded_tokens, system, scoring_options, ground_truths=system["ground_truths"])
     if isinstance(ranked_expanded, tuple):
         ranked_expanded, query_average_precision_expanded = ranked_expanded
-        map_expanded = sum(query_average_precision_expanded.values()) / len(query_average_precision_expanded) if query_average_precision_expanded else 0.0
+        map_expanded = query_average_precision_expanded
+        map_expanded["__BATCH__"] = sum(query_average_precision_expanded.values()) / len(query_average_precision_expanded) if query_average_precision_expanded else 0.0
 
     summary_rows = []
     for qid, query_str in queries.items():
+        original_tokens_str = " ".join(original_tokens[qid][:60]) + ("..." if len(original_tokens[qid]) > 60 else "")
+
         summary_rows.append(
             {
                 "Query ID": qid,
-                "Query": (query_str[:60] + "...") if len(query_str) > 60 else query_str,
-                "Expansion Terms": expansion_counts[qid],
+                "Query": original_tokens_str,
+                "Expansion Terms": len(expanded_tokens[qid]) - len(original_tokens[qid]),
                 "Docs Retrieved (Original)": len(ranked_original.get(qid, [])),
                 "Docs Retrieved (Expanded)": len(ranked_expanded.get(qid, [])),
-                "MAP Original": map_original,
-                "MAP Expanded": map_expanded,
+                "MAP Original": map_original[qid],
+                "MAP Expanded": map_expanded[qid],
             }
         )
+
+    summary_rows.append(
+        {
+            "Query ID": "BATCH",
+            "Query": "...",
+            "Expansion Terms": "...",
+            "Docs Retrieved (Original)": len(ranked_original.get("__BATCH__", [])),
+            "Docs Retrieved (Expanded)": len(ranked_expanded.get("__BATCH__", [])),
+            "MAP Original": map_original.get("__BATCH__", 0.0),
+            "MAP Expanded": map_expanded.get("__BATCH__", 0.0),
+        }
+    )
 
     summary_df = pd.DataFrame(
         summary_rows,

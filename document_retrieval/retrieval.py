@@ -86,7 +86,7 @@ def retrieve_documents(
 
         # Sort scores in descending order
         ranked_docs[qid] = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        if ground_truths is not None:
+        if ground_truths is not None and qid != "__BATCH__":
             query_average_precision[qid] = calculate_average_precision(
                 ranked_docs[qid], ground_truths.get(qid, set())
             )
