@@ -1,7 +1,5 @@
-import math
 import os
 import tempfile
-from collections import Counter
 
 import pandas as pd
 import streamlit as st
@@ -22,6 +20,7 @@ from preprocessing.preprocessing import load_smart, preprocess, preprocess_colle
 from inverted_index.inverted_index import InvertedIndex
 from scoring.scoring import ScoringResults
 from query_expansion.query_expansion import QueryExpander
+from document_retrieval.retrieval import retrieve_documents
 from document_retrieval.retrieval import retrieve_documents
 
 
@@ -143,6 +142,16 @@ st.markdown(
 
 DATA_DIR = "data"
 MODEL_DIR = "models/pretrained_qegans"
+_WEIGHT_TO_ENUM = {
+    "raw tf": TFWeight.RAW_TF,
+    "binary tf": TFWeight.BINARY_TF,
+    "log tf": TFWeight.LOG_TF,
+    "augmented tf": TFWeight.AUGMENTED_TF,
+}
+_NORM_TO_ENUM = {
+    "no": TFIDFScheme.RAW,
+    "yes": TFIDFScheme.NORMALIZED,
+}
 
 
 @st.cache_resource(show_spinner=False)
@@ -156,7 +165,7 @@ def get_query_expander(use_stemming: bool, remove_stopwords: bool):
 
 @st.cache_resource(show_spinner=False)
 def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
-                         tf_weight: TFWeight, tfidf_scheme: TFIDFScheme):
+                         doc_tf_weight: TFWeight, doc_tfidf_scheme: TFIDFScheme):
     raw_texts = load_smart(f"{DATA_DIR}/cisi.all")
     processed_docs = preprocess_collection(
         raw_texts,
@@ -165,10 +174,10 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
     )
     inverted_index = InvertedIndex(processed_docs)
     scoring_options = ScoringOptions(
-        docs_tf_weight=tf_weight,
-        docs_tf_idf_scheme=tfidf_scheme,
-        query_tf_weight=tf_weight,
-        query_tf_idf_scheme=tfidf_scheme,
+        docs_tf_weight=doc_tf_weight,
+        docs_tf_idf_scheme=doc_tfidf_scheme,
+        query_tf_weight=doc_tf_weight,
+        query_tf_idf_scheme=doc_tfidf_scheme,
     )
     scoring_results = ScoringResults(
         inverted_index, len(processed_docs), scoring_options
@@ -181,44 +190,13 @@ def get_retrieval_system(use_stemming: bool, remove_stopwords: bool,
         "scoring_options": scoring_options,
     }
 
-def _rank_query(tokens, system):
-    scoring = system["scoring_results"]
-    options = system["scoring_options"]
-    idf = scoring.idf
-    docs_weight = scoring.tf_idf
-    doc_lengths = scoring.doc_lengths
-
-    term_tf = Counter(tokens)
-    q_max_tf = max(term_tf.values()) if term_tf else 1
-
-    scores = {}
-    query_length = 0.0
-    for term, q_tf in term_tf.items():
-        if term not in idf:
-            continue
-        if options.query_tf_weight == TFWeight.RAW_TF:
-            q_weight = q_tf * idf[term]
-        elif options.query_tf_weight == TFWeight.LOG_TF:
-            q_weight = (1 + math.log2(q_tf)) * idf[term]
-        elif options.query_tf_weight == TFWeight.BINARY_TF:
-            q_weight = 1 * idf[term]
-        else: 
-            q_weight = (0.5 + 0.5 * q_tf / q_max_tf) * idf[term]
-
-        query_length += q_weight ** 2
-        for doc_id, d_weight in docs_weight[term].items():
-            scores[doc_id] = scores.get(doc_id, 0.0) + q_weight * d_weight
-
-    if options.docs_tf_idf_scheme == TFIDFScheme.NORMALIZED:
-        for doc_id in scores:
-            d_norm = doc_lengths[doc_id] if doc_lengths[doc_id] > 0 else 1
-            scores[doc_id] /= d_norm
-    if options.query_tf_idf_scheme == TFIDFScheme.NORMALIZED:
-        q_norm = math.sqrt(query_length) if query_length > 0 else 1
-        for doc_id in scores:
-            scores[doc_id] /= q_norm
-
-    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+def _build_scoring_options(settings):
+    return ScoringOptions(
+        docs_tf_weight=_WEIGHT_TO_ENUM[settings["doc_tf_variant"]],
+        docs_tf_idf_scheme=_NORM_TO_ENUM[settings["doc_norm"]],
+        query_tf_weight=_WEIGHT_TO_ENUM[settings["query_tf_variant"]],
+        query_tf_idf_scheme=_NORM_TO_ENUM[settings["query_norm"]],
+    )
 
 
 def run_expand_query(query, settings):
@@ -239,24 +217,33 @@ def run_expand_query(query, settings):
     )
 
 
-def run_search(query, settings):
+def run_search(query, settings, expanded_terms=None):
     system = get_retrieval_system(
         settings["use_stemming"],
         settings["remove_stopwords"],
-        settings["tf_weight"],
-        settings["tfidf_scheme"],
+        _WEIGHT_TO_ENUM[settings["doc_tf_variant"]],
+        _NORM_TO_ENUM[settings["doc_norm"]],
     )
     tokens = preprocess(
         query,
         stem=settings["use_stemming"],
         remove_stopwords=settings["remove_stopwords"],
     )
-    expanded_terms = run_expand_query(query, settings)
+    if expanded_terms is None:
+        expanded_terms = run_expand_query(query, settings)
     expanded_tokens = tokens + [term for term, _ in expanded_terms]
 
     rank_original = retrieve_documents({"q": tokens}, system["processed_docs"])["q"]
     rank_expanded = retrieve_documents({"q": expanded_tokens}, system["processed_docs"])["q"]
 
+    rank_original = retrieve_documents({"q": tokens}, system["processed_docs"])["q"]
+    rank_expanded = retrieve_documents({"q": expanded_tokens}, system["processed_docs"])["q"]
+
+    ranked = retrieve_documents(
+        {"__original__": tokens, "__expanded__": expanded_tokens},
+        system["processed_docs"],
+        _build_scoring_options(settings),
+    )
     return {
         "original_query": query,
         "expanded_terms": expanded_terms,
@@ -298,12 +285,6 @@ def get_index_stats(doc_id, system):
 
 
 def _parse_batch_queries(text):
-    """Parse uploaded batch text into an ordered {query_id: query_string} dict.
-
-    If the file is in CISI SMART format (contains `.I` markers, like query.text),
-    reuse the backend's load_smart() parser so it works directly. Otherwise treat
-    every non-empty line as a separate query.
-    """
     if ".I" in text:
         tmp_path = None
         try:
@@ -322,23 +303,19 @@ def _parse_batch_queries(text):
 
 
 def run_batch_processing(uploaded_file, settings):
-    """Run real GAN expansion + retrieval for every query in the uploaded file.
-
-    Returns a summary dict with the per-query DataFrame. MAP is hardcoded to 0.0
-    until teammates wire up the qrels.text evaluation; the actual expansion and
-    retrieval computation still runs for every query.
-    """
     text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
     queries = _parse_batch_queries(text)
 
     system = get_retrieval_system(
         settings["use_stemming"],
         settings["remove_stopwords"],
-        settings["tf_weight"],
-        settings["tfidf_scheme"],
+        _WEIGHT_TO_ENUM[settings["doc_tf_variant"]],
+        _NORM_TO_ENUM[settings["doc_norm"]],
     )
-
-    summary_rows = []
+    scoring_options = _build_scoring_options(settings)
+    original_tokens = {}
+    expanded_tokens = {}
+    expansion_counts = {}
     for qid, query_str in queries.items():
         tokens = preprocess(
             query_str,
@@ -355,9 +332,9 @@ def run_batch_processing(uploaded_file, settings):
             {
                 "Query ID": qid,
                 "Query": (query_str[:60] + "...") if len(query_str) > 60 else query_str,
-                "Expansion Terms": len(expanded_terms),
-                "Docs Retrieved (Original)": len(ranking_original),
-                "Docs Retrieved (Expanded)": len(ranking_expanded),
+                "Expansion Terms": expansion_counts[qid],
+                "Docs Retrieved (Original)": len(ranked_original.get(qid, [])),
+                "Docs Retrieved (Expanded)": len(ranked_expanded.get(qid, [])),
                 "MAP Original": 0.0,
                 "MAP Expanded": 0.0,
             }
@@ -434,24 +411,36 @@ with st.sidebar:
     use_stemming = st.checkbox("Stemming", value=True)
     remove_stopwords = st.checkbox("Remove Stop-words", value=True)
 
-    st.markdown("#### Weighting")
-    weighting_method = st.selectbox(
-        "Weighting Method",
-        options=[
-            "TF (logarithmic/binary/augmented/raw)",
-            "IDF Only",
-            "TF-IDF",
-            "TF-IDF + Cosine Normalization",
-        ],
-        index=3,
+    _METHOD_OPTIONS = [
+        "TF (logarithmic/binary/augmented/raw)",
+        "IDF Only",
+        "TF-IDF",
+        "TF-IDF + Cosine Normalization",
+    ]
+    _TF_OPTIONS = ["raw tf", "binary tf", "log tf", "augmented tf"]
+    _NORM_OPTIONS = ["no", "yes"]
+
+    st.markdown("#### Document Weighting")
+    doc_method = st.selectbox(
+        "Document Weighting Method", options=_METHOD_OPTIONS, index=3, key="doc_method"
     )
-    tf_variant = None
-    if weighting_method.startswith("TF ("):
-        tf_variant = st.selectbox(
-            "TF Variant",
-            options=["Raw", "Logarithmic", "Binary", "Augmented"],
-            index=0,
-        )
+    doc_tf_variant = st.selectbox(
+        "Document TF Variant", options=_TF_OPTIONS, index=0, key="doc_tf_variant"
+    )
+    doc_norm = st.selectbox(
+        "Document Normalization", options=_NORM_OPTIONS, index=1, key="doc_norm"
+    )
+
+    st.markdown("#### Query Weighting")
+    query_method = st.selectbox(
+        "Query Weighting Method", options=_METHOD_OPTIONS, index=3, key="query_method"
+    )
+    query_tf_variant = st.selectbox(
+        "Query TF Variant", options=_TF_OPTIONS, index=0, key="query_tf_variant"
+    )
+    query_norm = st.selectbox(
+        "Query Normalization", options=_NORM_OPTIONS, index=1, key="query_norm"
+    )
 
     st.markdown("#### Query Expansion")
     add_all_words = st.checkbox("Add All Words", value=False)
@@ -465,47 +454,19 @@ with st.sidebar:
         help="Number of expansion terms to add. Ignored when 'Add All Words' is checked.",
     )
 
-_TF_VARIANT_TO_ENUM = {
-    "Raw": TFWeight.RAW_TF,
-    "Logarithmic": TFWeight.LOG_TF,
-    "Binary": TFWeight.BINARY_TF,
-    "Augmented": TFWeight.AUGMENTED_TF,
-}
-
-if weighting_method.startswith("TF ("):
-    tf_weight = _TF_VARIANT_TO_ENUM.get(tf_variant, TFWeight.RAW_TF)
-    tfidf_scheme = TFIDFScheme.RAW
-elif weighting_method == "IDF Only":
-    tf_weight = TFWeight.BINARY_TF
-    tfidf_scheme = TFIDFScheme.RAW
-elif weighting_method == "TF-IDF":
-    tf_weight = TFWeight.RAW_TF
-    tfidf_scheme = TFIDFScheme.RAW
-else:  # TF-IDF + Cosine Normalization
-    tf_weight = TFWeight.RAW_TF
-    tfidf_scheme = TFIDFScheme.NORMALIZED
-
-scoring_options = ScoringOptions(
-    docs_tf_weight=tf_weight,
-    docs_tf_idf_scheme=tfidf_scheme,
-    query_tf_weight=tf_weight,
-    query_tf_idf_scheme=tfidf_scheme,
-)
-
 settings = {
     "use_stemming": use_stemming,
     "remove_stopwords": remove_stopwords,
-    "weighting_method": weighting_method,
-    "tf_variant": tf_variant,
     "add_all_words": add_all_words,
     "expansion_limit": int(expansion_limit),
-    "tf_weight": tf_weight,
-    "tfidf_scheme": tfidf_scheme,
-    "scoring_options": scoring_options,
+    "doc_method": doc_method,
+    "doc_tf_variant": doc_tf_variant,
+    "doc_norm": doc_norm,
+    "query_method": query_method,
+    "query_tf_variant": query_tf_variant,
+    "query_norm": query_norm,
 }
 
-
-# Main area header
 st.markdown('<div class="app-title">Retrieval Engine</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="app-subtitle">Advanced document search powered by GAN query expansion.</div>',
@@ -519,25 +480,54 @@ interactive_tab, batch_tab, index_tab = st.tabs(
 
 # Tab 1: Interactive Search
 with interactive_tab:
-    with st.form("search_form"):
-        search_col, button_col = st.columns([5, 1])
-        with search_col:
-            query = st.text_input(
-                "Search query",
-                placeholder="e.g. automatic information retrieval from titles",
-                label_visibility="collapsed",
-            )
-        with button_col:
-            search_clicked = st.form_submit_button(
-                "Search", type="primary", use_container_width=True
-            )
+    query = st.text_input(
+        "Search query",
+        placeholder="e.g. automatic information retrieval from titles",
+        key="raw_query",
+    )
+    generate_clicked = st.button(
+        "Generate Expansion Terms", type="primary", key="generate_btn"
+    )
 
-    if search_clicked:
+    if generate_clicked:
         if not query.strip():
             st.warning("Please enter a search query first.")
         else:
-            with st.spinner("Running GAN model and expanding query..."):
-                st.session_state["search_results"] = run_search(query, settings)
+            with st.spinner("Generating expansion terms (GAN)..."):
+                terms = run_expand_query(query, settings)
+            st.session_state["expansion_terms"] = terms
+            st.session_state["expansion_query"] = query
+            all_term_strs = [t for t, _ in terms]
+            if settings["add_all_words"]:
+                st.session_state["selected_terms"] = all_term_strs
+            else:
+                st.session_state["selected_terms"] = all_term_strs[
+                    : settings["expansion_limit"]
+                ]
+            st.session_state.pop("search_results", None)
+
+    if "expansion_terms" in st.session_state:
+        expansion_terms = st.session_state["expansion_terms"]
+        option_strs = [t for t, _ in expansion_terms]
+
+        st.subheader("Review Expansion Terms")
+        if not option_strs:
+            st.info("The GAN returned no expansion terms for this query.")
+        st.multiselect(
+            "Select the expansion terms to include in the search",
+            options=option_strs,
+            key="selected_terms",
+        )
+        execute_clicked = st.button("Execute Search", type="primary", key="execute_btn")
+
+        if execute_clicked:
+            selected = set(st.session_state.get("selected_terms", []))
+            selected_pairs = [(t, w) for t, w in expansion_terms if t in selected]
+            search_query = st.session_state.get("expansion_query", query)
+            with st.spinner("Running retrieval..."):
+                st.session_state["search_results"] = run_search(
+                    search_query, settings, expanded_terms=selected_pairs
+                )
 
     results = st.session_state.get("search_results")
     if results:
@@ -587,8 +577,8 @@ with interactive_tab:
             viewer_system = get_retrieval_system(
                 settings["use_stemming"],
                 settings["remove_stopwords"],
-                settings["tf_weight"],
-                settings["tfidf_scheme"],
+                _WEIGHT_TO_ENUM[settings["doc_tf_variant"]],
+                _NORM_TO_ENUM[settings["doc_norm"]],
             )
             raw_texts = viewer_system["raw_texts"]
             selected_doc = st.selectbox(
@@ -673,8 +663,8 @@ with index_tab:
             system = get_retrieval_system(
                 settings["use_stemming"],
                 settings["remove_stopwords"],
-                settings["tf_weight"],
-                settings["tfidf_scheme"],
+                _WEIGHT_TO_ENUM[settings["doc_tf_variant"]],
+                _NORM_TO_ENUM[settings["doc_norm"]],
             )
             stats, index_df = get_index_stats(inspect_doc_id, system)
 
