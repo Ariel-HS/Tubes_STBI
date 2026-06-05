@@ -3,6 +3,8 @@ import random
 import pandas as pd
 import streamlit as st
 
+from scoring.scoring_options import ScoringOptions, TFIDFScheme, TFWeight
+
 
 # Page config
 st.set_page_config(
@@ -232,6 +234,21 @@ def mock_process_batch(file_bytes):
     }
 
 
+# Backend adapters
+def format_ranking_to_df(raw_ranking):
+    """Convert a raw ranking from the backend into the DataFrame the UI expects.
+
+    Input: list of (doc_id, score) tuples, already sorted best-first, as returned
+    by document_retrieval.retrieval.retrieve_documents()[qid].
+    Output: DataFrame with columns ["Rank", "Document ID", "Similarity"].
+    """
+    rows = [
+        {"Rank": rank, "Document ID": str(doc_id), "Similarity": round(float(score), 4)}
+        for rank, (doc_id, score) in enumerate(raw_ranking, start=1)
+    ]
+    return pd.DataFrame(rows, columns=["Rank", "Document ID", "Similarity"])
+
+
 # HTML render helpers
 def render_metric_card(title, value, accent=False, delta=""):
     accent_cls = " accent" if accent else ""
@@ -251,10 +268,15 @@ def render_metric_card(title, value, accent=False, delta=""):
 def render_query_badge(label, query, expanded_terms=None):
     body = query
     if expanded_terms:
+        max_terms = 15
+        shown_terms = expanded_terms[:max_terms]
         highlights = " ".join(
-            f'<span class="highlight">{term}</span>' for term, _ in expanded_terms
+            f'<span class="highlight">{term}</span>' for term, _ in shown_terms
         )
         body = f"{query} {highlights}"
+        remaining = len(expanded_terms) - len(shown_terms)
+        if remaining > 0:
+            body += f' <span class="label">...and {remaining} more terms</span>'
     st.markdown(
         f"""
         <div class="query-badge">
@@ -305,6 +327,33 @@ with st.sidebar:
         help="Number of expansion terms to add. Ignored when 'Add All Words' is checked.",
     )
 
+_TF_VARIANT_TO_ENUM = {
+    "Raw": TFWeight.RAW_TF,
+    "Logarithmic": TFWeight.LOG_TF,
+    "Binary": TFWeight.BINARY_TF,
+    "Augmented": TFWeight.AUGMENTED_TF,
+}
+
+if weighting_method.startswith("TF ("):
+    tf_weight = _TF_VARIANT_TO_ENUM.get(tf_variant, TFWeight.RAW_TF)
+    tfidf_scheme = TFIDFScheme.RAW
+elif weighting_method == "IDF Only":
+    tf_weight = TFWeight.BINARY_TF
+    tfidf_scheme = TFIDFScheme.RAW
+elif weighting_method == "TF-IDF":
+    tf_weight = TFWeight.RAW_TF
+    tfidf_scheme = TFIDFScheme.RAW
+else:  # TF-IDF + Cosine Normalization
+    tf_weight = TFWeight.RAW_TF
+    tfidf_scheme = TFIDFScheme.NORMALIZED
+
+scoring_options = ScoringOptions(
+    docs_tf_weight=tf_weight,
+    docs_tf_idf_scheme=tfidf_scheme,
+    query_tf_weight=tf_weight,
+    query_tf_idf_scheme=tfidf_scheme,
+)
+
 settings = {
     "use_stemming": use_stemming,
     "remove_stopwords": remove_stopwords,
@@ -312,6 +361,9 @@ settings = {
     "tf_variant": tf_variant,
     "add_all_words": add_all_words,
     "expansion_limit": int(expansion_limit),
+    "tf_weight": tf_weight,
+    "tfidf_scheme": tfidf_scheme,
+    "scoring_options": scoring_options,
 }
 
 
