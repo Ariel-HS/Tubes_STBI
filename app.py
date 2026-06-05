@@ -1,10 +1,10 @@
-import random
-import time
+import math
+import os
+import tempfile
+from collections import Counter
 
 import pandas as pd
 import streamlit as st
-import math
-from collections import Counter
 import ssl
 import nltk
 
@@ -293,35 +293,85 @@ def get_index_stats(doc_id, system):
     return stats, df
 
 
-def mock_process_batch(file_bytes):
-    text = file_bytes.decode("utf-8", errors="ignore")
-    queries = [ln.strip() for ln in text.splitlines() if ln.strip()]
+def _parse_batch_queries(text):
+    """Parse uploaded batch text into an ordered {query_id: query_string} dict.
 
-    map_lines = ["query_id\tMAP_original\tMAP_expanded"]
-    retrieval_lines = ["query_id\trank\tdoc_id\tsimilarity"]
-    random.seed(42)
-    for i, _ in enumerate(queries, start=1):
-        map_lines.append(
-            f"{i}\t{round(random.uniform(0.2, 0.45), 4)}\t{round(random.uniform(0.45, 0.7), 4)}"
+    If the file is in CISI SMART format (contains `.I` markers, like query.text),
+    reuse the backend's load_smart() parser so it works directly. Otherwise treat
+    every non-empty line as a separate query.
+    """
+    if ".I" in text:
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w", suffix=".text", delete=False, encoding="utf-8"
+            ) as tmp:
+                tmp.write(text)
+                tmp_path = tmp.name
+            return load_smart(tmp_path, fields=("W",))
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    return {str(i): q for i, q in enumerate(lines, start=1)}
+
+
+def run_batch_processing(uploaded_file, settings):
+    """Run real GAN expansion + retrieval for every query in the uploaded file.
+
+    Returns a summary dict with the per-query DataFrame. MAP is hardcoded to 0.0
+    until teammates wire up the qrels.text evaluation; the actual expansion and
+    retrieval computation still runs for every query.
+    """
+    text = uploaded_file.getvalue().decode("utf-8", errors="ignore")
+    queries = _parse_batch_queries(text)
+
+    system = get_retrieval_system(
+        settings["use_stemming"],
+        settings["remove_stopwords"],
+        settings["tf_weight"],
+        settings["tfidf_scheme"],
+    )
+
+    summary_rows = []
+    for qid, query_str in queries.items():
+        tokens = preprocess(
+            query_str,
+            stem=settings["use_stemming"],
+            remove_stopwords=settings["remove_stopwords"],
         )
-        score = 0.95
-        for rank in range(1, 11):
-            retrieval_lines.append(
-                f"{i}\t{rank}\t{random.randint(1, 1488)}\t{round(score, 4)}"
-            )
-            score -= random.uniform(0.02, 0.08)
+        expanded_terms = run_expand_query(query_str, settings)
+        expanded_tokens = tokens + [term for term, _ in expanded_terms]
 
-    mean_original = round(random.uniform(0.25, 0.40), 4)
-    mean_expanded = round(random.uniform(0.45, 0.65), 4)
-    map_lines.append(f"ALL\t{mean_original}\t{mean_expanded}")
+        ranking_original = _rank_query(tokens, system)
+        ranking_expanded = _rank_query(expanded_tokens, system)
 
-    return {
-        "num_queries": len(queries),
-        "map_file": "\n".join(map_lines),
-        "retrieval_file": "\n".join(retrieval_lines),
-        "mean_original": mean_original,
-        "mean_expanded": mean_expanded,
-    }
+        summary_rows.append(
+            {
+                "Query ID": qid,
+                "Query": (query_str[:60] + "...") if len(query_str) > 60 else query_str,
+                "Expansion Terms": len(expanded_terms),
+                "Docs Retrieved (Original)": len(ranking_original),
+                "Docs Retrieved (Expanded)": len(ranking_expanded),
+                "MAP Original": 0.0,
+                "MAP Expanded": 0.0,
+            }
+        )
+
+    summary_df = pd.DataFrame(
+        summary_rows,
+        columns=[
+            "Query ID",
+            "Query",
+            "Expansion Terms",
+            "Docs Retrieved (Original)",
+            "Docs Retrieved (Expanded)",
+            "MAP Original",
+            "MAP Expanded",
+        ],
+    )
+    return {"num_queries": len(queries), "summary_df": summary_df}
 
 
 # Backend adapters
@@ -555,11 +605,12 @@ with interactive_tab:
 with batch_tab:
     st.subheader("Batch Processing")
     st.caption(
-        "Upload a .txt file containing multiple queries (one query per line). "
-        "Results and MAP rankings will be available for download."
+        "Upload a .txt file containing multiple queries (one query per line, or a "
+        "CISI query.text file). Real GAN expansion and retrieval run for every "
+        "query. (MAP is pending the qrels.text evaluation.)"
     )
 
-    uploaded_file = st.file_uploader("Upload queries file", type=["txt"])
+    uploaded_file = st.file_uploader("Upload queries file", type=["txt", "text"])
     process_clicked = st.button("Process Batch", type="primary", key="batch_btn")
 
     if process_clicked:
@@ -573,43 +624,23 @@ with batch_tab:
                 )
                 st.stop()
 
-            with st.spinner("Processing batch queries and calculating MAP..."):
-                time.sleep(1.5)
-                batch_result = mock_process_batch(file_bytes)
+            with st.spinner("Processing batch queries (GAN expansion + retrieval)..."):
+                batch_result = run_batch_processing(uploaded_file, settings)
             st.success(f"Processed {batch_result['num_queries']} queries successfully.")
 
-            mean_col1, mean_col2 = st.columns(2)
-            with mean_col1:
-                render_metric_card(
-                    "Mean MAP - Original", f"{batch_result['mean_original']:.4f}"
-                )
-            with mean_col2:
-                delta = batch_result["mean_expanded"] - batch_result["mean_original"]
-                render_metric_card(
-                    "Mean MAP - Expanded",
-                    f"{batch_result['mean_expanded']:.4f}",
-                    accent=True,
-                    delta=f"+{delta:.4f} vs original",
-                )
+            st.dataframe(
+                batch_result["summary_df"],
+                use_container_width=True,
+                hide_index=True,
+            )
 
-            st.write("")
-            dl_col1, dl_col2 = st.columns(2)
-            with dl_col1:
-                st.download_button(
-                    "Download MAP Results",
-                    data=batch_result["map_file"],
-                    file_name="map_results.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                )
-            with dl_col2:
-                st.download_button(
-                    "Download Retrieval Results",
-                    data=batch_result["retrieval_file"],
-                    file_name="retrieval_results.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                )
+            st.download_button(
+                "Download Batch Summary (CSV)",
+                data=batch_result["summary_df"].to_csv(index=False),
+                file_name="batch_summary.csv",
+                mime="text/csv",
+            )
+
 
 
 # Tab 3: Inverted Index Inspector
