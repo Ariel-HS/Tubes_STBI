@@ -604,7 +604,7 @@ with batch_tab:
         "query. (MAP is pending the qrels.text evaluation.)"
     )
 
-    uploaded_file = st.file_uploader("Upload queries file", type=["text"])
+    uploaded_file = st.file_uploader("Upload queries file", type=["txt","text"])
     process_clicked = st.button("Process Batch", type="primary", key="batch_btn")
 
     if process_clicked:
@@ -643,7 +643,7 @@ with index_tab:
     st.caption("Inspect the inverted index entries for a specific document.")
 
     with st.form("index_form"):
-        idx_col1, idx_col2 = st.columns([5, 1])
+        idx_col1, idx_col2 = st.columns([5,1])
         with idx_col1:
             inspect_doc_id = st.text_input(
                 "Document ID",
