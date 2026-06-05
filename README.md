@@ -50,7 +50,6 @@ Then open the local URL shown in the terminal (usually `http://localhost:8501`).
 |---|---|
 | `document_retrieval/retrieval.py` | Score and rank documents by cosine similarity |
 | `inverted_index/inverted_index.py` | Build `{term: {doc_id: raw_tf}}` from tokenized docs |
-| `mAP/map.py` | Calculate mean average precision (mAP) |
 | `preprocessing/preprocessing.py` | Parse SMART-format files, tokenize, remove stopwords, Porter-stem |
 | `query_expansion/query_expansion.py` | GAN-based query expander |
 | `scoring/scoring.py` | Compute IDF, TF-IDF weights, and document Euclidean lengths |

@@ -96,3 +96,25 @@ def retrieve_documents(
         return ranked_docs, query_average_precision
 
     return ranked_docs
+
+def calculate_average_precision(ranked_docs: list[tuple[str, float]], relevant_docs: set[str]) -> float:
+    """
+Return Average Precision for a single ranked query.
+If there are no relevant documents, return 0.0 to avoid division by zero.
+Input:
+- ranked_docs: List of tuples (doc_id, score) sorted by score in descending order
+- relevant_docs: Set of relevant document IDs for the query
+Output:
+- Average Precision (float) for the query
+    """
+    if not relevant_docs:
+        return 0.0
+
+    num_relevant = 0
+    precision_sum = 0.0
+    for rank, (doc_id, _) in enumerate(ranked_docs, start=1):
+        if doc_id in relevant_docs:
+            num_relevant += 1
+            precision_sum += num_relevant / rank
+
+    return precision_sum / len(relevant_docs)
